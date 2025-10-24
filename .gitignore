@@ -34,3 +34,18 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+
+# Added by cargo
+/target
+
+# Rust-specific
+Cargo.lock
+*.rs.bk
+*.pdb
+
+# Build artifacts
+debug/
+target/
+**/*.rs.bk
+**/*.orig

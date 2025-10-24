@@ -1,0 +1,41 @@
+# Example ccsync configuration file (TOML format)
+# Place this file in your project root or home directory as .ccsync or .ccsync.local
+
+[sync]
+# Default conflict resolution strategy
+# Options: "fail", "overwrite", "skip", "newer"
+conflict_resolution = "newer"
+
+# Follow symlinks during sync
+follow_symlinks = true
+
+# Create backup before overwriting
+create_backups = false
+
+[types]
+# Sync all types by default
+default = "all"  # Options: "all", "commands", "skills", "subagents"
+
+# Direction-specific type filters
+to_local = ["commands", "skills", "subagents"]
+to_global = ["commands", "skills"]
+
+[ignore]
+# Ignore patterns (gitignore-style)
+patterns = [
+    "*.tmp",
+    "*.bak",
+    ".DS_Store",
+    "node_modules/"
+]
+
+[include]
+# Include patterns (takes precedence over ignore)
+patterns = [
+    "*.md",
+    "*.sh"
+]
+
+[logging]
+level = "info"  # Options: "debug", "info", "warn", "error"
+verbose = false

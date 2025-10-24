@@ -1,0 +1,41 @@
+[package]
+name = "ccsync"
+version = "0.1.0"
+edition = "2024"
+authors = ["ccsync contributors"]
+description = "Bidirectional sync tool for Claude Code configuration files"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourusername/ccsync"
+readme = "README.md"
+keywords = ["cli", "sync", "configuration", "claude"]
+categories = ["command-line-utilities"]
+rust-version = "1.85"  # Minimum Rust version for 2024 edition
+
+# Build configuration
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+# Development profile for faster builds
+[profile.dev]
+opt-level = 0
+debug = true
+
+[dependencies]
+
+# Platform-specific dependencies
+[target.'cfg(unix)'.dependencies]
+
+[target.'cfg(windows)'.dependencies]
+
+[dev-dependencies]
+
+# Future workspace members can be added here when needed:
+# [workspace]
+# members = [
+#     "ccsync",
+#     "ccsync-lib",
+# ]
+# resolver = "2"

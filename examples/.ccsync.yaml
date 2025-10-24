@@ -1,0 +1,46 @@
+# Example ccsync configuration file
+# Place this file in your project root or home directory as .ccsync or .ccsync.local
+
+# Sync configuration
+sync:
+  # Default conflict resolution strategy
+  # Options: fail, overwrite, skip, newer
+  conflict_resolution: newer
+  
+  # Follow symlinks during sync
+  follow_symlinks: true
+  
+  # Create backup before overwriting
+  create_backups: false
+
+# Type filters - specify which types to sync
+types:
+  # Sync all types by default
+  default: all  # Options: all, commands, skills, subagents
+  
+  # Direction-specific type filters
+  to_local:
+    - commands
+    - skills
+    - subagents
+  
+  to_global:
+    - commands
+    - skills
+
+# Ignore patterns (gitignore-style)
+ignore:
+  - "*.tmp"
+  - "*.bak"
+  - ".DS_Store"
+  - "node_modules/"
+  
+# Include patterns (takes precedence over ignore)
+include:
+  - "*.md"
+  - "*.sh"
+
+# Logging
+logging:
+  level: info  # Options: debug, info, warn, error
+  verbose: false
