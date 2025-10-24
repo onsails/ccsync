@@ -2,6 +2,19 @@
 //!
 //! This module provides functionality for recursively scanning directories
 //! and discovering configuration files within .claude directories.
+//!
+//! # Error Handling Philosophy
+//!
+//! This module follows a nuanced approach to error handling:
+//!
+//! - **Fail-fast errors**: Permission errors, invalid paths, and unexpected I/O errors
+//!   cause immediate failure with descriptive error messages
+//! - **Expected conditions**: Broken symlinks and symlink loops are treated as expected
+//!   conditions in file systems, collected in the result, and scanning continues
+//! - **Security**: All paths are canonicalized before scanning to prevent traversal attacks
+//!
+//! This design allows the scanner to be resilient to common file system issues
+//! while still failing on unexpected errors that indicate serious problems.
 
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -61,16 +74,25 @@ impl Scanner {
     ///
     /// This method recursively traverses the given directory and collects
     /// all files found, while handling symlinks according to the configured options.
+    ///
+    /// # Security
+    ///
+    /// The path is canonicalized to prevent directory traversal attacks.
+    /// Only paths that exist and are accessible will be scanned.
     pub(crate) fn scan<P: AsRef<Path>>(&self, path: P) -> anyhow::Result<ScanResult> {
         let path = path.as_ref();
+
+        // Canonicalize path for security (prevents traversal attacks)
+        let canonical_path = path.canonicalize()
+            .map_err(|e| anyhow::anyhow!("Invalid path {}: {}", path.display(), e))?;
         let mut result = ScanResult {
             files: Vec::new(),
             broken_symlinks: Vec::new(),
             symlink_loops: Vec::new(),
         };
 
-        // Build walkdir configuration
-        let mut walker = WalkDir::new(path).follow_links(self.options.follow_symlinks);
+        // Build walkdir configuration using canonical path
+        let mut walker = WalkDir::new(&canonical_path).follow_links(self.options.follow_symlinks);
 
         if let Some(depth) = self.options.max_depth {
             walker = walker.max_depth(depth);
@@ -89,12 +111,11 @@ impl Scanner {
                     // Handle specific error types appropriately
                     if let Some(path) = e.path() {
                         // Check for broken symlink (ENOENT/NotFound)
-                        if e.io_error()
-                            .map(|io_err| io_err.kind() == std::io::ErrorKind::NotFound)
-                            .unwrap_or(false)
-                        {
-                            result.broken_symlinks.push(path.to_path_buf());
-                            continue;
+                        if let Some(io_err) = e.io_error() {
+                            if io_err.kind() == std::io::ErrorKind::NotFound {
+                                result.broken_symlinks.push(path.to_path_buf());
+                                continue;
+                            }
                         }
 
                         // Check for symlink loop
@@ -202,7 +223,7 @@ mod tests {
         create_test_file(test_dir, "file1.txt", "content1");
         create_test_file(test_dir, "file2.txt", "content2");
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
         let result = scanner.scan(test_dir).unwrap();
 
         assert_eq!(result.files.len(), 2);
@@ -222,7 +243,7 @@ mod tests {
         create_test_file(test_dir, "root.txt", "root");
         create_test_file(&subdir, "nested.txt", "nested");
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
         let result = scanner.scan(test_dir).unwrap();
 
         assert_eq!(result.files.len(), 2);
@@ -242,7 +263,7 @@ mod tests {
         create_test_file(&subdir1, "level1.txt", "level1");
         create_test_file(&subdir2, "level2.txt", "level2");
 
-        let mut scanner = Scanner::with_options(ScanOptions {
+        let scanner = Scanner::with_options(ScanOptions {
             follow_symlinks: true,
             max_depth: Some(2),
         });
@@ -268,7 +289,7 @@ mod tests {
         // Create non-.claude files (should be ignored)
         create_test_file(test_dir, "other.txt", "other");
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
         let result = scanner.scan_claude_dirs(test_dir).unwrap();
 
         // Should only find files within .claude directory
@@ -290,7 +311,7 @@ mod tests {
         // Create symlink to the target directory
         std::os::unix::fs::symlink(&target_dir, test_dir.join("link_dir")).unwrap();
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
         let result = scanner.scan(test_dir).unwrap();
 
         // Should find real.txt through the symlink
@@ -311,7 +332,7 @@ mod tests {
         // Create symlink to non-existent target
         std::os::unix::fs::symlink("/nonexistent/path/that/does/not/exist", test_dir.join("broken_link")).unwrap();
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
         let result = scanner.scan(test_dir).unwrap();
 
         // Should detect the broken symlink and continue scanning
@@ -337,7 +358,7 @@ mod tests {
         std::os::unix::fs::symlink(&dir_b, dir_a.join("link_b")).unwrap();
         std::os::unix::fs::symlink(&dir_a, dir_b.join("link_a")).unwrap();
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
         let result = scanner.scan(test_dir).unwrap();
 
         // Walkdir detects symlink loops and we collect them in the result
@@ -356,7 +377,7 @@ mod tests {
         create_test_file(temp_dir1.path(), "file1.txt", "content1");
         create_test_file(temp_dir2.path(), "file2.txt", "content2");
 
-        let mut scanner = Scanner::new();
+        let scanner = Scanner::new();
 
         // First scan
         let result1 = scanner.scan(temp_dir1.path()).unwrap();
@@ -385,7 +406,7 @@ mod tests {
         std::os::unix::fs::symlink(&target_dir, test_dir.join("link_dir")).unwrap();
 
         // Scan with follow_symlinks=false
-        let mut scanner = Scanner::with_options(ScanOptions {
+        let scanner = Scanner::with_options(ScanOptions {
             follow_symlinks: false,
             max_depth: None,
         });
