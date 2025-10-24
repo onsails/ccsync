@@ -43,7 +43,7 @@ pub enum ConfigError {
 /// to_local:
 ///   ignore:
 ///     - "commands/personal-*.md"
-///     - "subagents/experimental/"
+///     - "agents/"
 ///   types:
 ///     - commands
 ///     - skills
@@ -88,7 +88,7 @@ pub struct DirectionConfig {
     /// Patterns to ignore during sync (gitignore syntax)
     /// Examples:
     /// - "commands/personal-*.md" - ignore specific files
-    /// - "subagents/experimental/" - ignore directory
+    /// - "agents/" - ignore directory
     /// - "*.secret" - ignore all files with .secret extension
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ignore: Option<Vec<String>>,
@@ -230,7 +230,7 @@ mod tests {
 to_local:
   ignore:
     - "commands/personal-*.md"
-    - "subagents/experimental/"
+    - "agents/"
   types:
     - commands
     - skills
