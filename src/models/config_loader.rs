@@ -82,25 +82,20 @@ impl ConfigLoader {
 
     /// Find the global configuration file path
     ///
+    /// Uses XDG Base Directory specification for cross-platform config location.
+    /// Returns path regardless of whether file exists (caller handles non-existent files).
+    ///
     /// Checks in order:
     /// 1. $XDG_CONFIG_HOME/ccsync/config.yaml
-    /// 2. ~/.config/ccsync/config.yaml
+    /// 2. ~/.config/ccsync/config.yaml (via dirs::config_dir)
     fn find_global_config(&self) -> Option<PathBuf> {
         // Try XDG_CONFIG_HOME first
         if let Ok(xdg_config) = env::var("XDG_CONFIG_HOME") {
-            let config_path = PathBuf::from(xdg_config).join("ccsync").join("config.yaml");
-            if config_path.exists() {
-                return Some(config_path);
-            }
+            return Some(PathBuf::from(xdg_config).join("ccsync").join("config.yaml"));
         }
 
-        // Fall back to ~/.config/ccsync/config.yaml
-        if let Some(home_dir) = dirs::home_dir() {
-            let config_path = home_dir.join(".config").join("ccsync").join("config.yaml");
-            return Some(config_path);
-        }
-
-        None
+        // Fall back to standard config directory (uses dirs::config_dir which is secure)
+        dirs::config_dir().map(|config_dir| config_dir.join("ccsync").join("config.yaml"))
     }
 }
 
@@ -139,18 +134,14 @@ impl Config {
             (None, None) => None,
             (Some(config), None) => Some(config),
             (None, Some(config)) => Some(config),
-            (Some(mut lower_config), Some(higher_config)) => {
+            (Some(lower_config), Some(higher_config)) => {
                 // Higher precedence fields override lower precedence
-                if higher_config.ignore.is_some() {
-                    lower_config.ignore = higher_config.ignore;
-                }
-                if higher_config.include.is_some() {
-                    lower_config.include = higher_config.include;
-                }
-                if higher_config.types.is_some() {
-                    lower_config.types = higher_config.types;
-                }
-                Some(lower_config)
+                let merged = DirectionConfig {
+                    ignore: higher_config.ignore.or(lower_config.ignore),
+                    include: higher_config.include.or(lower_config.include),
+                    types: higher_config.types.or(lower_config.types),
+                };
+                Some(merged)
             }
         }
     }
