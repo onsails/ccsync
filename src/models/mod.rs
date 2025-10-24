@@ -5,4 +5,5 @@
 
 pub mod config;
 pub mod config_loader;
+pub mod file_metadata;
 pub mod pattern_matcher;
