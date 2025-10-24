@@ -83,7 +83,8 @@ impl Scanner {
         let path = path.as_ref();
 
         // Canonicalize path for security (prevents traversal attacks)
-        let canonical_path = path.canonicalize()
+        let canonical_path = path
+            .canonicalize()
             .map_err(|e| anyhow::anyhow!("Invalid path {}: {}", path.display(), e))?;
         let mut result = ScanResult {
             files: Vec::new(),
@@ -128,7 +129,9 @@ impl Scanner {
                     // For other errors (permissions, etc.), fail fast with context
                     return Err(anyhow::anyhow!(
                         "Error scanning directory{}: {}",
-                        e.path().map(|p| format!(" at {}", p.display())).unwrap_or_default(),
+                        e.path()
+                            .map(|p| format!(" at {}", p.display()))
+                            .unwrap_or_default(),
                         e
                     ));
                 }
@@ -140,12 +143,9 @@ impl Scanner {
         // the intended scan boundary (e.g., ~/.claude/evil -> /etc/passwd)
         if self.options.follow_symlinks {
             for file in &result.files {
-                let canonical_file = file.canonicalize()
-                    .map_err(|e| anyhow::anyhow!(
-                        "Failed to canonicalize file at {}: {}",
-                        file.display(),
-                        e
-                    ))?;
+                let canonical_file = file.canonicalize().map_err(|e| {
+                    anyhow::anyhow!("Failed to canonicalize file at {}: {}", file.display(), e)
+                })?;
 
                 if !canonical_file.starts_with(&canonical_path) {
                     return Err(anyhow::anyhow!(
@@ -173,7 +173,8 @@ impl Scanner {
         let path = path.as_ref();
 
         // Canonicalize path for security (consistent with scan method)
-        let canonical_path = path.canonicalize()
+        let canonical_path = path
+            .canonicalize()
             .map_err(|e| anyhow::anyhow!("Invalid path {}: {}", path.display(), e))?;
 
         let mut result = ScanResult {
@@ -210,7 +211,9 @@ impl Scanner {
                     // Fail fast on errors when searching for .claude directories
                     return Err(anyhow::anyhow!(
                         "Error searching for .claude directories{}: {}",
-                        e.path().map(|p| format!(" at {}", p.display())).unwrap_or_default(),
+                        e.path()
+                            .map(|p| format!(" at {}", p.display()))
+                            .unwrap_or_default(),
                         e
                     ));
                 }
@@ -357,7 +360,11 @@ mod tests {
         create_test_file(test_dir, "valid.txt", "content");
 
         // Create symlink to non-existent target
-        std::os::unix::fs::symlink("/nonexistent/path/that/does/not/exist", test_dir.join("broken_link")).unwrap();
+        std::os::unix::fs::symlink(
+            "/nonexistent/path/that/does/not/exist",
+            test_dir.join("broken_link"),
+        )
+        .unwrap();
 
         let scanner = Scanner::new();
         let result = scanner.scan(test_dir).unwrap();
@@ -390,10 +397,17 @@ mod tests {
 
         // Walkdir detects symlink loops and we collect them in the result
         // The loop is caught and added to symlink_loops, not treated as an error
-        assert!(!result.symlink_loops.is_empty(), "Should detect at least one symlink loop");
-        assert!(result.symlink_loops.iter().any(|p|
-            p.to_str().unwrap().contains("link_a") || p.to_str().unwrap().contains("link_b")
-        ));
+        assert!(
+            !result.symlink_loops.is_empty(),
+            "Should detect at least one symlink loop"
+        );
+        assert!(
+            result
+                .symlink_loops
+                .iter()
+                .any(|p| p.to_str().unwrap().contains("link_a")
+                    || p.to_str().unwrap().contains("link_b"))
+        );
     }
 
     #[test]
@@ -468,9 +482,15 @@ mod tests {
         // Should find regular.txt and real.txt in target/ but NOT through link_dir
         // With follow_symlinks=false, walkdir won't traverse into link_dir
         let has_regular = result.files.iter().any(|p| p.ends_with("regular.txt"));
-        let has_real_via_target = result.files.iter().any(|p| p.to_str().unwrap().contains("target") && p.ends_with("real.txt"));
+        let has_real_via_target = result
+            .files
+            .iter()
+            .any(|p| p.to_str().unwrap().contains("target") && p.ends_with("real.txt"));
 
         assert!(has_regular, "Should find regular.txt");
-        assert!(has_real_via_target, "Should find real.txt via target/ directory");
+        assert!(
+            has_real_via_target,
+            "Should find real.txt via target/ directory"
+        );
     }
 }

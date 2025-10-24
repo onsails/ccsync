@@ -231,8 +231,20 @@ mod tests {
 
         // Higher precedence ignore patterns should replace lower
         assert_eq!(to_local.ignore.as_ref().unwrap().len(), 2);
-        assert!(to_local.ignore.as_ref().unwrap().contains(&"*.log".to_string()));
-        assert!(to_local.ignore.as_ref().unwrap().contains(&"*.bak".to_string()));
+        assert!(
+            to_local
+                .ignore
+                .as_ref()
+                .unwrap()
+                .contains(&"*.log".to_string())
+        );
+        assert!(
+            to_local
+                .ignore
+                .as_ref()
+                .unwrap()
+                .contains(&"*.bak".to_string())
+        );
 
         // Types from lower config should be preserved
         assert_eq!(to_local.types.as_ref().unwrap().len(), 1);
@@ -459,7 +471,13 @@ to_local:
         let to_local = merged.to_local.unwrap();
         // Local config ignore should override
         assert_eq!(to_local.ignore.as_ref().unwrap().len(), 2);
-        assert!(to_local.ignore.as_ref().unwrap().contains(&"*.log".to_string()));
+        assert!(
+            to_local
+                .ignore
+                .as_ref()
+                .unwrap()
+                .contains(&"*.log".to_string())
+        );
         // Types from project config should be preserved (local didn't override)
         assert_eq!(to_local.types.as_ref().unwrap().len(), 1);
         assert_eq!(to_local.types.as_ref().unwrap()[0], ConfigType::Commands);
