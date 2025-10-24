@@ -140,14 +140,19 @@ impl Scanner {
         // the intended scan boundary (e.g., ~/.claude/evil -> /etc/passwd)
         if self.options.follow_symlinks {
             for file in &result.files {
-                if let Ok(canonical_file) = file.canonicalize() {
-                    if !canonical_file.starts_with(&canonical_path) {
-                        return Err(anyhow::anyhow!(
-                            "Security violation: symlink at {} leads outside scan directory to {}",
-                            file.display(),
-                            canonical_file.display()
-                        ));
-                    }
+                let canonical_file = file.canonicalize()
+                    .map_err(|e| anyhow::anyhow!(
+                        "Failed to canonicalize file at {}: {}",
+                        file.display(),
+                        e
+                    ))?;
+
+                if !canonical_file.starts_with(&canonical_path) {
+                    return Err(anyhow::anyhow!(
+                        "Security violation: symlink at {} leads outside scan directory to {}",
+                        file.display(),
+                        canonical_file.display()
+                    ));
                 }
             }
         }
@@ -405,9 +410,35 @@ mod tests {
         let result1 = scanner.scan(temp_dir1.path()).unwrap();
         assert_eq!(result1.files.len(), 1);
 
-        // Second scan with same scanner - should work correctly (visited_paths cleared)
+        // Second scan with same scanner - should work correctly
         let result2 = scanner.scan(temp_dir2.path()).unwrap();
         assert_eq!(result2.files.len(), 1);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_scanner_detects_symlink_escape() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create a file inside scan directory
+        create_test_file(test_dir, "safe.txt", "safe");
+
+        // Create a symlink that escapes to parent directory
+        let parent_file = temp_dir.path().parent().unwrap().join("outside.txt");
+        fs::write(&parent_file, "outside content").unwrap();
+        std::os::unix::fs::symlink(&parent_file, test_dir.join("escape_link")).unwrap();
+
+        let scanner = Scanner::new();
+        let result = scanner.scan(test_dir);
+
+        // Should detect the security violation
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("Security violation") || err_msg.contains("outside"));
+
+        // Clean up
+        let _ = fs::remove_file(parent_file);
     }
 
     #[test]
