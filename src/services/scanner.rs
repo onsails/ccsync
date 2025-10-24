@@ -3,7 +3,6 @@
 //! This module provides functionality for recursively scanning directories
 //! and discovering configuration files within .claude directories.
 
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -42,7 +41,6 @@ pub(crate) struct ScanResult {
 #[allow(dead_code)] // Will be used in Task 6
 pub(crate) struct Scanner {
     options: ScanOptions,
-    visited_paths: HashSet<PathBuf>,
 }
 
 #[allow(dead_code)] // Will be used in Task 6
@@ -51,16 +49,12 @@ impl Scanner {
     pub(crate) fn new() -> Self {
         Self {
             options: ScanOptions::default(),
-            visited_paths: HashSet::new(),
         }
     }
 
     /// Create a scanner with custom options.
     pub(crate) fn with_options(options: ScanOptions) -> Self {
-        Self {
-            options,
-            visited_paths: HashSet::new(),
-        }
+        Self { options }
     }
 
     /// Scan a directory for files.
@@ -68,9 +62,6 @@ impl Scanner {
     /// This method recursively traverses the given directory and collects
     /// all files found, while handling symlinks according to the configured options.
     pub(crate) fn scan<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
-        // Clear visited paths to prevent false positives on scanner reuse
-        self.visited_paths.clear();
-
         let path = path.as_ref();
         let mut result = ScanResult {
             files: Vec::new(),
@@ -89,41 +80,36 @@ impl Scanner {
         for entry in walker {
             match entry {
                 Ok(entry) => {
-                    let entry_path = entry.path();
-
-                    // Check for symlink loops
-                    if self.options.follow_symlinks && entry.path_is_symlink() {
-                        let canonical = match entry_path.canonicalize() {
-                            Ok(p) => p,
-                            Err(_) => {
-                                result.broken_symlinks.push(entry_path.to_path_buf());
-                                continue;
-                            }
-                        };
-
-                        if self.visited_paths.contains(&canonical) {
-                            result.symlink_loops.push(entry_path.to_path_buf());
-                            continue;
-                        }
-                        self.visited_paths.insert(canonical);
-                    }
-
                     // Only collect files, not directories
                     if entry.file_type().is_file() {
-                        result.files.push(entry_path.to_path_buf());
+                        result.files.push(entry.path().to_path_buf());
                     }
                 }
                 Err(e) => {
-                    // Check if this is a broken symlink error
+                    // Handle specific error types appropriately
                     if let Some(path) = e.path() {
-                        if e.io_error().map(|io_err| io_err.kind() == std::io::ErrorKind::NotFound).unwrap_or(false) {
-                            // Broken symlink - collect it and continue
+                        // Check for broken symlink (ENOENT/NotFound)
+                        if e.io_error()
+                            .map(|io_err| io_err.kind() == std::io::ErrorKind::NotFound)
+                            .unwrap_or(false)
+                        {
                             result.broken_symlinks.push(path.to_path_buf());
                             continue;
                         }
+
+                        // Check for symlink loop
+                        if e.loop_ancestor().is_some() {
+                            result.symlink_loops.push(path.to_path_buf());
+                            continue;
+                        }
                     }
-                    // For other errors, fail fast
-                    return Err(anyhow::anyhow!("Error scanning directory: {}", e));
+
+                    // For other errors (permissions, etc.), fail fast with context
+                    return Err(anyhow::anyhow!(
+                        "Error scanning directory{}: {}",
+                        e.path().map(|p| format!(" at {}", p.display())).unwrap_or_default(),
+                        e
+                    ));
                 }
             }
         }
@@ -340,13 +326,14 @@ mod tests {
         std::os::unix::fs::symlink(&dir_a, dir_b.join("link_a")).unwrap();
 
         let mut scanner = Scanner::new();
-        let result = scanner.scan(test_dir);
+        let result = scanner.scan(test_dir).unwrap();
 
-        // Walkdir detects loops before our code does and returns an error
-        // This is expected with follow_links=true and fail-fast error handling
-        assert!(result.is_err());
-        let err_msg = result.unwrap_err().to_string();
-        assert!(err_msg.contains("loop") || err_msg.contains("Loop"));
+        // Walkdir detects symlink loops and we collect them in the result
+        // The loop is caught and added to symlink_loops, not treated as an error
+        assert!(!result.symlink_loops.is_empty(), "Should detect at least one symlink loop");
+        assert!(result.symlink_loops.iter().any(|p|
+            p.to_str().unwrap().contains("link_a") || p.to_str().unwrap().contains("link_b")
+        ));
     }
 
     #[test]
