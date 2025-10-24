@@ -1,0 +1,371 @@
+//! File scanning and discovery module.
+//!
+//! This module provides functionality for recursively scanning directories
+//! and discovering configuration files within .claude directories.
+
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
+
+/// Options for file scanning behavior.
+#[derive(Debug, Clone)]
+#[allow(dead_code)] // Will be used in Task 6
+pub(crate) struct ScanOptions {
+    /// Whether to follow symlinks (default: true)
+    pub(crate) follow_symlinks: bool,
+    /// Maximum depth to traverse (None = unlimited)
+    pub(crate) max_depth: Option<usize>,
+}
+
+impl Default for ScanOptions {
+    fn default() -> Self {
+        Self {
+            follow_symlinks: true,
+            max_depth: None,
+        }
+    }
+}
+
+/// Result of a file scan operation.
+#[derive(Debug, Clone)]
+#[allow(dead_code)] // Will be used in Task 6
+pub(crate) struct ScanResult {
+    /// All discovered files
+    pub(crate) files: Vec<PathBuf>,
+    /// Broken symlinks encountered
+    pub(crate) broken_symlinks: Vec<PathBuf>,
+    /// Symlink loops detected
+    pub(crate) symlink_loops: Vec<PathBuf>,
+}
+
+/// Scanner for recursively discovering files in directories.
+#[allow(dead_code)] // Will be used in Task 6
+pub(crate) struct Scanner {
+    options: ScanOptions,
+    visited_paths: HashSet<PathBuf>,
+}
+
+#[allow(dead_code)] // Will be used in Task 6
+impl Scanner {
+    /// Create a new scanner with default options.
+    pub(crate) fn new() -> Self {
+        Self {
+            options: ScanOptions::default(),
+            visited_paths: HashSet::new(),
+        }
+    }
+
+    /// Create a scanner with custom options.
+    pub(crate) fn with_options(options: ScanOptions) -> Self {
+        Self {
+            options,
+            visited_paths: HashSet::new(),
+        }
+    }
+
+    /// Scan a directory for files.
+    ///
+    /// This method recursively traverses the given directory and collects
+    /// all files found, while handling symlinks according to the configured options.
+    pub(crate) fn scan<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
+        let path = path.as_ref();
+        let mut result = ScanResult {
+            files: Vec::new(),
+            broken_symlinks: Vec::new(),
+            symlink_loops: Vec::new(),
+        };
+
+        // Build walkdir configuration
+        let mut walker = WalkDir::new(path).follow_links(self.options.follow_symlinks);
+
+        if let Some(depth) = self.options.max_depth {
+            walker = walker.max_depth(depth);
+        }
+
+        // Process entries
+        for entry in walker {
+            match entry {
+                Ok(entry) => {
+                    let entry_path = entry.path();
+
+                    // Check for symlink loops
+                    if self.options.follow_symlinks && entry.path_is_symlink() {
+                        let canonical = match entry_path.canonicalize() {
+                            Ok(p) => p,
+                            Err(_) => {
+                                result.broken_symlinks.push(entry_path.to_path_buf());
+                                continue;
+                            }
+                        };
+
+                        if self.visited_paths.contains(&canonical) {
+                            result.symlink_loops.push(entry_path.to_path_buf());
+                            continue;
+                        }
+                        self.visited_paths.insert(canonical);
+                    }
+
+                    // Only collect files, not directories
+                    if entry.file_type().is_file() {
+                        result.files.push(entry_path.to_path_buf());
+                    }
+                }
+                Err(e) => {
+                    // Check if this is a broken symlink error
+                    if let Some(path) = e.path() {
+                        if e.io_error().map(|io_err| io_err.kind() == std::io::ErrorKind::NotFound).unwrap_or(false) {
+                            // Broken symlink - collect it and continue
+                            result.broken_symlinks.push(path.to_path_buf());
+                            continue;
+                        }
+                    }
+                    // For other errors, fail fast
+                    return Err(anyhow::anyhow!("Error scanning directory: {}", e));
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    /// Scan specifically for .claude directories and their contents.
+    ///
+    /// This method finds all .claude directories within the given path
+    /// and scans their contents.
+    pub(crate) fn scan_claude_dirs<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
+        let path = path.as_ref();
+        let mut result = ScanResult {
+            files: Vec::new(),
+            broken_symlinks: Vec::new(),
+            symlink_loops: Vec::new(),
+        };
+
+        // First, find all .claude directories
+        let walker = WalkDir::new(path)
+            .follow_links(false) // Don't follow symlinks when searching for .claude dirs
+            .into_iter()
+            .filter_entry(|e| {
+                // Only descend into .claude directories or traverse to find them
+                e.file_name() == ".claude" || e.file_type().is_dir()
+            });
+
+        for entry in walker.filter_map(|e| e.ok()) {
+            if entry.file_name() == ".claude" && entry.file_type().is_dir() {
+                // Scan this .claude directory
+                let scan_result = self.scan(entry.path())?;
+                result.files.extend(scan_result.files);
+                result.broken_symlinks.extend(scan_result.broken_symlinks);
+                result.symlink_loops.extend(scan_result.symlink_loops);
+            }
+        }
+
+        Ok(result)
+    }
+}
+
+impl Default for Scanner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    fn create_test_file(dir: &Path, name: &str, content: &str) -> PathBuf {
+        let file_path = dir.join(name);
+        let mut file = fs::File::create(&file_path).unwrap();
+        file.write_all(content.as_bytes()).unwrap();
+        file_path
+    }
+
+    #[test]
+    fn test_scanner_basic() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create test files
+        create_test_file(test_dir, "file1.txt", "content1");
+        create_test_file(test_dir, "file2.txt", "content2");
+
+        let mut scanner = Scanner::new();
+        let result = scanner.scan(test_dir).unwrap();
+
+        assert_eq!(result.files.len(), 2);
+        assert!(result.broken_symlinks.is_empty());
+        assert!(result.symlink_loops.is_empty());
+    }
+
+    #[test]
+    fn test_scanner_nested() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create nested structure
+        let subdir = test_dir.join("subdir");
+        fs::create_dir(&subdir).unwrap();
+
+        create_test_file(test_dir, "root.txt", "root");
+        create_test_file(&subdir, "nested.txt", "nested");
+
+        let mut scanner = Scanner::new();
+        let result = scanner.scan(test_dir).unwrap();
+
+        assert_eq!(result.files.len(), 2);
+    }
+
+    #[test]
+    fn test_scanner_max_depth() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create nested structure
+        let subdir1 = test_dir.join("level1");
+        let subdir2 = subdir1.join("level2");
+        fs::create_dir_all(&subdir2).unwrap();
+
+        create_test_file(test_dir, "root.txt", "root");
+        create_test_file(&subdir1, "level1.txt", "level1");
+        create_test_file(&subdir2, "level2.txt", "level2");
+
+        let mut scanner = Scanner::with_options(ScanOptions {
+            follow_symlinks: true,
+            max_depth: Some(2),
+        });
+        let result = scanner.scan(test_dir).unwrap();
+
+        // Should find root.txt and level1.txt, but not level2.txt
+        assert_eq!(result.files.len(), 2);
+    }
+
+    #[test]
+    fn test_scan_claude_dirs() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create .claude directory structure
+        let claude_dir = test_dir.join(".claude");
+        let commands_dir = claude_dir.join("commands");
+        fs::create_dir_all(&commands_dir).unwrap();
+
+        create_test_file(&claude_dir, "config.toml", "config");
+        create_test_file(&commands_dir, "test.md", "command");
+
+        // Create non-.claude files (should be ignored)
+        create_test_file(test_dir, "other.txt", "other");
+
+        let mut scanner = Scanner::new();
+        let result = scanner.scan_claude_dirs(test_dir).unwrap();
+
+        // Should only find files within .claude directory
+        assert_eq!(result.files.len(), 2);
+        assert!(result.files.iter().all(|p| p.starts_with(&claude_dir)));
+    }
+
+    #[test]
+    #[cfg(unix)] // Symlinks behave differently on Windows
+    fn test_scanner_follows_symlinks() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create target directory with a file
+        let target_dir = test_dir.join("target");
+        fs::create_dir(&target_dir).unwrap();
+        create_test_file(&target_dir, "real.txt", "real content");
+
+        // Create symlink to the target directory
+        std::os::unix::fs::symlink(&target_dir, test_dir.join("link_dir")).unwrap();
+
+        let mut scanner = Scanner::new();
+        let result = scanner.scan(test_dir).unwrap();
+
+        // Should find real.txt through the symlink
+        assert!(result.files.iter().any(|p| p.ends_with("real.txt")));
+        assert!(result.broken_symlinks.is_empty());
+        assert!(result.symlink_loops.is_empty());
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_scanner_detects_broken_symlinks() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create a valid file
+        create_test_file(test_dir, "valid.txt", "content");
+
+        // Create symlink to non-existent target
+        std::os::unix::fs::symlink("/nonexistent/path/that/does/not/exist", test_dir.join("broken_link")).unwrap();
+
+        let mut scanner = Scanner::new();
+        let result = scanner.scan(test_dir).unwrap();
+
+        // Should detect the broken symlink and continue scanning
+        assert_eq!(result.broken_symlinks.len(), 1);
+        assert!(result.broken_symlinks[0].ends_with("broken_link"));
+        // Should still find the valid file
+        assert_eq!(result.files.len(), 1);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_scanner_detects_symlink_loops() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create two directories
+        let dir_a = test_dir.join("a");
+        let dir_b = test_dir.join("b");
+        fs::create_dir(&dir_a).unwrap();
+        fs::create_dir(&dir_b).unwrap();
+
+        // Create a loop: a/link_b -> ../b, b/link_a -> ../a
+        std::os::unix::fs::symlink(&dir_b, dir_a.join("link_b")).unwrap();
+        std::os::unix::fs::symlink(&dir_a, dir_b.join("link_a")).unwrap();
+
+        let mut scanner = Scanner::new();
+        let result = scanner.scan(test_dir);
+
+        // Walkdir will detect the loop and return an error when follow_links=true
+        // This is the expected behavior with fail-fast error handling
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("loop"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_scanner_respects_no_follow_symlinks() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_dir = temp_dir.path();
+
+        // Create a regular file in root
+        create_test_file(test_dir, "regular.txt", "regular");
+
+        // Create target directory with a file
+        let target_dir = test_dir.join("target");
+        fs::create_dir(&target_dir).unwrap();
+        create_test_file(&target_dir, "real.txt", "real content");
+
+        // Create symlink to target directory
+        std::os::unix::fs::symlink(&target_dir, test_dir.join("link_dir")).unwrap();
+
+        // Scan with follow_symlinks=false
+        let mut scanner = Scanner::with_options(ScanOptions {
+            follow_symlinks: false,
+            max_depth: None,
+        });
+        let result = scanner.scan(test_dir).unwrap();
+
+        // Should find regular.txt and real.txt in target/ but NOT through link_dir
+        // With follow_symlinks=false, walkdir won't traverse into link_dir
+        let has_regular = result.files.iter().any(|p| p.ends_with("regular.txt"));
+        let has_real_via_target = result.files.iter().any(|p| p.to_str().unwrap().contains("target") && p.ends_with("real.txt"));
+
+        assert!(has_regular, "Should find regular.txt");
+        assert!(has_real_via_target, "Should find real.txt via target/ directory");
+    }
+}
