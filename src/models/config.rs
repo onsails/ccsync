@@ -5,6 +5,7 @@
 //! patterns, type filters, and sync behavior.
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -28,6 +29,14 @@ pub enum ConfigError {
     /// Invalid configuration structure
     #[error("Invalid configuration in {path}: {message}")]
     InvalidConfig { path: PathBuf, message: String },
+
+    /// Configuration file too large
+    #[error("Config file {path} exceeds maximum size of {max_size} bytes (actual: {actual_size} bytes)")]
+    FileTooLarge {
+        path: PathBuf,
+        max_size: u64,
+        actual_size: u64,
+    },
 }
 
 /// Main configuration structure that can be loaded from YAML files.
@@ -103,7 +112,7 @@ pub struct DirectionConfig {
 }
 
 /// Configuration type filter
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ConfigType {
     /// Slash commands
@@ -117,7 +126,7 @@ pub enum ConfigType {
 }
 
 /// Conflict resolution strategy
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ConflictStrategy {
     /// Fail on conflicts (default)
@@ -131,7 +140,14 @@ pub enum ConflictStrategy {
 }
 
 impl Config {
+    /// Maximum allowed configuration file size (1 MB)
+    const MAX_CONFIG_SIZE: u64 = 1024 * 1024;
+
     /// Parse configuration from a YAML file.
+    ///
+    /// This method includes security checks:
+    /// - File size validation (max 1 MB)
+    /// - Automatic validation of parsed configuration
     ///
     /// # Arguments
     ///
@@ -139,7 +155,7 @@ impl Config {
     ///
     /// # Returns
     ///
-    /// Parsed configuration or an error if parsing fails
+    /// Parsed and validated configuration or an error if parsing/validation fails
     ///
     /// # Examples
     ///
@@ -151,12 +167,32 @@ impl Config {
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     pub fn from_file(path: &Path) -> Result<Self, ConfigError> {
+        // Check file size before reading to prevent OOM
+        let metadata = std::fs::metadata(path).map_err(|e| ConfigError::ReadError {
+            path: path.to_path_buf(),
+            source: e,
+        })?;
+
+        let file_size = metadata.len();
+        if file_size > Self::MAX_CONFIG_SIZE {
+            return Err(ConfigError::FileTooLarge {
+                path: path.to_path_buf(),
+                max_size: Self::MAX_CONFIG_SIZE,
+                actual_size: file_size,
+            });
+        }
+
         let content = std::fs::read_to_string(path).map_err(|e| ConfigError::ReadError {
             path: path.to_path_buf(),
             source: e,
         })?;
 
-        Self::from_yaml(&content, path)
+        let config = Self::from_yaml(&content, path)?;
+
+        // Automatically validate after parsing
+        config.validate(path)?;
+
+        Ok(config)
     }
 
     /// Parse configuration from a YAML string with a given path for error reporting.
@@ -174,33 +210,110 @@ impl Config {
 
     /// Validate the configuration for logical consistency
     ///
+    /// Checks include:
+    /// - Type conflicts (e.g., 'all' with other types)
+    /// - Empty type arrays
+    /// - Duplicate types
+    /// - Path traversal in patterns
+    ///
     /// # Returns
     ///
     /// `Ok(())` if valid, or an error describing the issue
     pub fn validate(&self, path: &Path) -> Result<(), ConfigError> {
-        // Check that if types are specified, they don't conflict
+        // Validate to_local configuration
         if let Some(ref to_local) = self.to_local {
-            if let Some(ref types) = to_local.types {
-                if types.contains(&ConfigType::All) && types.len() > 1 {
-                    return Err(ConfigError::InvalidConfig {
-                        path: path.to_path_buf(),
-                        message: "to_local.types cannot contain 'all' with other types"
-                            .to_string(),
-                    });
-                }
+            Self::validate_direction_config(to_local, "to_local", path)?;
+        }
+
+        // Validate to_global configuration
+        if let Some(ref to_global) = self.to_global {
+            Self::validate_direction_config(to_global, "to_global", path)?;
+        }
+
+        Ok(())
+    }
+
+    /// Helper function to validate a DirectionConfig
+    fn validate_direction_config(
+        config: &DirectionConfig,
+        name: &str,
+        path: &Path,
+    ) -> Result<(), ConfigError> {
+        // Validate types
+        if let Some(ref types) = config.types {
+            // Check for empty types array
+            if types.is_empty() {
+                return Err(ConfigError::InvalidConfig {
+                    path: path.to_path_buf(),
+                    message: format!("{}.types cannot be empty", name),
+                });
+            }
+
+            // Check for 'all' with other types
+            if types.contains(&ConfigType::All) && types.len() > 1 {
+                return Err(ConfigError::InvalidConfig {
+                    path: path.to_path_buf(),
+                    message: format!("{}.types cannot contain 'all' with other types", name),
+                });
+            }
+
+            // Check for duplicate types
+            let unique_types: HashSet<_> = types.iter().collect();
+            if unique_types.len() != types.len() {
+                return Err(ConfigError::InvalidConfig {
+                    path: path.to_path_buf(),
+                    message: format!("{}.types contains duplicate values", name),
+                });
             }
         }
 
-        if let Some(ref to_global) = self.to_global {
-            if let Some(ref types) = to_global.types {
-                if types.contains(&ConfigType::All) && types.len() > 1 {
-                    return Err(ConfigError::InvalidConfig {
-                        path: path.to_path_buf(),
-                        message: "to_global.types cannot contain 'all' with other types"
-                            .to_string(),
-                    });
-                }
+        // Validate ignore patterns
+        if let Some(ref ignore) = config.ignore {
+            for pattern in ignore {
+                Self::validate_pattern(pattern, path, &format!("{}.ignore", name))?;
             }
+        }
+
+        // Validate include patterns
+        if let Some(ref include) = config.include {
+            for pattern in include {
+                Self::validate_pattern(pattern, path, &format!("{}.include", name))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Validate a single pattern for security issues
+    fn validate_pattern(pattern: &str, path: &Path, field: &str) -> Result<(), ConfigError> {
+        // Check for empty patterns
+        if pattern.trim().is_empty() {
+            return Err(ConfigError::InvalidConfig {
+                path: path.to_path_buf(),
+                message: format!("{} contains empty pattern", field),
+            });
+        }
+
+        // Check for absolute paths (Unix and Windows)
+        if pattern.starts_with('/') || pattern.chars().nth(1) == Some(':') {
+            return Err(ConfigError::InvalidConfig {
+                path: path.to_path_buf(),
+                message: format!(
+                    "{} contains absolute path '{}' which is not allowed",
+                    field, pattern
+                ),
+            });
+        }
+
+        // Check for parent directory traversal
+        if pattern.contains("..") {
+            return Err(ConfigError::InvalidConfig {
+                path: path.to_path_buf(),
+                message: format!(
+                    "{} contains path traversal '..' in pattern '{}' which is not allowed",
+                    field, pattern
+                ),
+            });
         }
 
         Ok(())
@@ -421,12 +534,226 @@ to_local:
         let yaml = r#"
 to_local:
   ignore: []
-  types: []
 "#;
 
         let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
         let to_local = config.to_local.unwrap();
         assert_eq!(to_local.ignore.as_ref().unwrap().len(), 0);
-        assert_eq!(to_local.types.as_ref().unwrap().len(), 0);
+    }
+
+    // Security Tests
+
+    #[test]
+    fn test_validate_empty_types_array() {
+        let yaml = r#"
+to_local:
+  types: []
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("cannot be empty"));
+            }
+            _ => panic!("Expected InvalidConfig error for empty types"),
+        }
+    }
+
+    #[test]
+    fn test_validate_duplicate_types() {
+        let yaml = r#"
+to_local:
+  types:
+    - commands
+    - skills
+    - commands
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("duplicate"));
+            }
+            _ => panic!("Expected InvalidConfig error for duplicate types"),
+        }
+    }
+
+    #[test]
+    fn test_validate_path_traversal_in_ignore() {
+        let yaml = r#"
+to_local:
+  ignore:
+    - "../etc/passwd"
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("path traversal"));
+            }
+            _ => panic!("Expected InvalidConfig error for path traversal"),
+        }
+    }
+
+    #[test]
+    fn test_validate_absolute_path_unix() {
+        let yaml = r#"
+to_local:
+  ignore:
+    - "/etc/passwd"
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("absolute path"));
+            }
+            _ => panic!("Expected InvalidConfig error for absolute path"),
+        }
+    }
+
+    #[test]
+    fn test_validate_absolute_path_windows() {
+        let yaml = r#"
+to_local:
+  ignore:
+    - "C:/Windows/System32"
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("absolute path"));
+            }
+            _ => panic!("Expected InvalidConfig error for Windows absolute path"),
+        }
+    }
+
+    #[test]
+    fn test_validate_empty_pattern() {
+        let yaml = r#"
+to_local:
+  ignore:
+    - "  "
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("empty pattern"));
+            }
+            _ => panic!("Expected InvalidConfig error for empty pattern"),
+        }
+    }
+
+    #[test]
+    fn test_file_size_limit() {
+        use tempfile::NamedTempFile;
+        use std::io::Write;
+
+        // Create a temporary file larger than MAX_CONFIG_SIZE
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let large_content = "a".repeat((Config::MAX_CONFIG_SIZE + 1) as usize);
+        temp_file.write_all(large_content.as_bytes()).unwrap();
+        temp_file.flush().unwrap();
+
+        let result = Config::from_file(temp_file.path());
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::FileTooLarge { .. }) => (),
+            _ => panic!("Expected FileTooLarge error"),
+        }
+    }
+
+    #[test]
+    fn test_from_file_auto_validates() {
+        use tempfile::NamedTempFile;
+        use std::io::Write;
+
+        // Create a config with invalid content (empty types array)
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let invalid_yaml = r#"
+to_local:
+  types: []
+"#;
+        temp_file.write_all(invalid_yaml.as_bytes()).unwrap();
+        temp_file.flush().unwrap();
+
+        // from_file should automatically validate and fail
+        let result = Config::from_file(temp_file.path());
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { .. }) => (),
+            _ => panic!("Expected InvalidConfig error from auto-validation"),
+        }
+    }
+
+    #[test]
+    fn test_from_file_success() {
+        use tempfile::NamedTempFile;
+        use std::io::Write;
+
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let valid_yaml = r#"
+to_local:
+  ignore:
+    - "*.tmp"
+  types:
+    - commands
+"#;
+        temp_file.write_all(valid_yaml.as_bytes()).unwrap();
+        temp_file.flush().unwrap();
+
+        let config = Config::from_file(temp_file.path()).unwrap();
+        assert!(config.to_local.is_some());
+    }
+
+    #[test]
+    fn test_validate_path_traversal_in_include() {
+        let yaml = r#"
+to_global:
+  include:
+    - "foo/../bar"
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        let result = config.validate(Path::new("test.yaml"));
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::InvalidConfig { message, .. }) => {
+                assert!(message.contains("path traversal"));
+            }
+            _ => panic!("Expected path traversal error in include"),
+        }
+    }
+
+    #[test]
+    fn test_validate_valid_patterns() {
+        let yaml = r#"
+to_local:
+  ignore:
+    - "*.tmp"
+    - "commands/test-*.md"
+    - "agents/"
+  types:
+    - commands
+    - skills
+"#;
+
+        let config = Config::from_yaml(yaml, Path::new("test.yaml")).unwrap();
+        // Should not error
+        config.validate(Path::new("test.yaml")).unwrap();
     }
 }
