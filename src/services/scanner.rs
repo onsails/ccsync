@@ -68,6 +68,9 @@ impl Scanner {
     /// This method recursively traverses the given directory and collects
     /// all files found, while handling symlinks according to the configured options.
     pub(crate) fn scan<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
+        // Clear visited paths to prevent false positives on scanner reuse
+        self.visited_paths.clear();
+
         let path = path.as_ref();
         let mut result = ScanResult {
             files: Vec::new(),
@@ -132,6 +135,11 @@ impl Scanner {
     ///
     /// This method finds all .claude directories within the given path
     /// and scans their contents.
+    ///
+    /// Note: When searching for .claude directories, symlinks are never followed
+    /// to avoid confusion and ensure we only find real .claude directories.
+    /// However, when scanning the contents of found .claude directories,
+    /// the `follow_symlinks` option from ScanOptions is respected.
     pub(crate) fn scan_claude_dirs<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
         let path = path.as_ref();
         let mut result = ScanResult {
@@ -141,8 +149,12 @@ impl Scanner {
         };
 
         // First, find all .claude directories
+        // Note: We intentionally don't follow symlinks when searching for .claude
+        // directories to ensure we only find real .claude dirs, not symlinks to them.
+        // This prevents confusion where a symlink to ~/.claude would be treated
+        // as a local .claude directory.
         let walker = WalkDir::new(path)
-            .follow_links(false) // Don't follow symlinks when searching for .claude dirs
+            .follow_links(false)
             .into_iter()
             .filter_entry(|e| {
                 // Only descend into .claude directories or traverse to find them
@@ -330,10 +342,30 @@ mod tests {
         let mut scanner = Scanner::new();
         let result = scanner.scan(test_dir);
 
-        // Walkdir will detect the loop and return an error when follow_links=true
-        // This is the expected behavior with fail-fast error handling
+        // Walkdir detects loops before our code does and returns an error
+        // This is expected with follow_links=true and fail-fast error handling
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("loop"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("loop") || err_msg.contains("Loop"));
+    }
+
+    #[test]
+    fn test_scanner_reuse() {
+        let temp_dir1 = TempDir::new().unwrap();
+        let temp_dir2 = TempDir::new().unwrap();
+
+        create_test_file(temp_dir1.path(), "file1.txt", "content1");
+        create_test_file(temp_dir2.path(), "file2.txt", "content2");
+
+        let mut scanner = Scanner::new();
+
+        // First scan
+        let result1 = scanner.scan(temp_dir1.path()).unwrap();
+        assert_eq!(result1.files.len(), 1);
+
+        // Second scan with same scanner - should work correctly (visited_paths cleared)
+        let result2 = scanner.scan(temp_dir2.path()).unwrap();
+        assert_eq!(result2.files.len(), 1);
     }
 
     #[test]
