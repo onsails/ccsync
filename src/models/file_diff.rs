@@ -12,15 +12,12 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum DiffError {
     /// Error reading file for diff
+    /// This includes permission errors and binary file errors (non-UTF8 content)
     #[error("Failed to read file {path} for diff: {source}")]
     ReadError {
         path: PathBuf,
         source: std::io::Error,
     },
-
-    /// File is binary, cannot generate text diff
-    #[error("File {path} is binary, cannot generate text diff")]
-    BinaryFile { path: PathBuf },
 }
 
 /// Type of file change
@@ -89,7 +86,7 @@ impl FileDiff {
                 Ok(Self {
                     path: relative_path.to_path_buf(),
                     change_type: ChangeType::Added,
-                    diff: Some(Self::format_added(&content)),
+                    diff: Some(Self::format_added(&content, relative_path)),
                 })
             }
             (false, true) => {
@@ -102,7 +99,7 @@ impl FileDiff {
                 Ok(Self {
                     path: relative_path.to_path_buf(),
                     change_type: ChangeType::Deleted,
-                    diff: Some(Self::format_deleted(&content)),
+                    diff: Some(Self::format_deleted(&content, relative_path)),
                 })
             }
             (true, true) => {
@@ -165,14 +162,14 @@ impl FileDiff {
                 output.push('\n');
             }
 
-            let mut old_line = group[0].old_range().start;
-            let mut new_line = group[0].new_range().start;
+            let old_start = group[0].old_range().start;
+            let new_start = group[0].new_range().start;
 
             output.push_str(&format!(
                 "@@ -{},{} +{},{} @@\n",
-                old_line + 1,
+                old_start + 1,
                 group.iter().map(|op| op.old_range().len()).sum::<usize>(),
-                new_line + 1,
+                new_start + 1,
                 group.iter().map(|op| op.new_range().len()).sum::<usize>(),
             ));
 
@@ -191,20 +188,30 @@ impl FileDiff {
         output
     }
 
-    /// Format added file (all lines prefixed with +)
-    fn format_added(content: &str) -> String {
+    /// Format added file in standard unified diff format
+    fn format_added(content: &str, path: &Path) -> String {
         let mut output = String::new();
-        output.push_str("+++ (new file)\n");
+        let line_count = content.lines().count();
+
+        output.push_str("--- /dev/null\n");
+        output.push_str(&format!("+++ b/{}\n", path.display()));
+        output.push_str(&format!("@@ -0,0 +1,{} @@\n", line_count));
+
         for line in content.lines() {
             output.push_str(&format!("+{}\n", line));
         }
         output
     }
 
-    /// Format deleted file (all lines prefixed with -)
-    fn format_deleted(content: &str) -> String {
+    /// Format deleted file in standard unified diff format
+    fn format_deleted(content: &str, path: &Path) -> String {
         let mut output = String::new();
-        output.push_str("--- (deleted)\n");
+        let line_count = content.lines().count();
+
+        output.push_str(&format!("--- a/{}\n", path.display()));
+        output.push_str("+++ /dev/null\n");
+        output.push_str(&format!("@@ -1,{} +0,0 @@\n", line_count));
+
         for line in content.lines() {
             output.push_str(&format!("-{}\n", line));
         }
@@ -242,6 +249,9 @@ mod tests {
         assert_eq!(diff.change_type, ChangeType::Added);
         assert!(diff.diff.is_some());
         let diff_text = diff.diff.unwrap();
+        assert!(diff_text.contains("--- /dev/null"));
+        assert!(diff_text.contains("+++ b/test.txt"));
+        assert!(diff_text.contains("@@ -0,0 +1,"));
         assert!(diff_text.contains("+new content"));
     }
 
@@ -258,6 +268,9 @@ mod tests {
         assert_eq!(diff.change_type, ChangeType::Deleted);
         assert!(diff.diff.is_some());
         let diff_text = diff.diff.unwrap();
+        assert!(diff_text.contains("--- a/test.txt"));
+        assert!(diff_text.contains("+++ /dev/null"));
+        assert!(diff_text.contains("@@ -1,"));
         assert!(diff_text.contains("-old content"));
     }
 
