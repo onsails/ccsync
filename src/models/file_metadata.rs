@@ -78,16 +78,20 @@ impl FileMetadata {
 
     /// Check if this file differs from another based on metadata
     ///
-    /// Returns true if files are guaranteed to differ based on metadata.
-    /// Returns false if files might be the same (requires content comparison).
+    /// Returns true if files are **guaranteed** to differ based on metadata alone.
+    /// Returns false if uncertain (might be same or different - needs content check).
     ///
     /// # Difference Detection Rules:
     ///
-    /// - If one exists and the other doesn't → DIFFERENT
-    /// - If both don't exist → SAME
-    /// - If sizes differ → DIFFERENT
-    /// - If modification times differ → POTENTIALLY DIFFERENT (needs content check)
-    /// - If sizes and times match → POTENTIALLY SAME (needs content check to be sure)
+    /// - If one exists and the other doesn't → DIFFERENT (returns true)
+    /// - If both don't exist → SAME (returns false)
+    /// - If sizes differ → DIFFERENT (returns true)
+    /// - If sizes match → UNCERTAIN (returns false, needs content check)
+    ///
+    /// Note: Modification time is NOT used for difference detection because:
+    /// - Files can be touched without content changes (false positive)
+    /// - Files can be modified with same mtime on some filesystems
+    /// - Size mismatch is already a reliable indicator
     ///
     /// # Arguments
     ///
@@ -103,16 +107,14 @@ impl FileMetadata {
             return false;
         }
 
-        // Both exist - compare size first (fast check)
+        // Both exist - compare size (reliable indicator)
         if self.size != other.size {
             return true;
         }
 
-        // Sizes match - compare modification times
-        // If times differ, files might be different (need content check)
-        // If times match, files might still be different (need content check)
-        // So we return false here to indicate "unknown, needs content check"
-        self.modified != other.modified
+        // Sizes match - cannot determine from metadata alone
+        // Return false to indicate "uncertain, needs content comparison"
+        false
     }
 
     /// Check if files might be the same based on metadata
@@ -145,8 +147,7 @@ impl FileMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::{self, File};
-    use std::io::Write;
+    use std::fs;
     use tempfile::TempDir;
 
     #[test]
@@ -208,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_differs_same_size_different_mtime() {
+    fn test_same_size_different_mtime() {
         let temp_dir = TempDir::new().unwrap();
         let file1 = temp_dir.path().join("file1.txt");
         let file2 = temp_dir.path().join("file2.txt");
@@ -220,8 +221,10 @@ mod tests {
         let meta1 = FileMetadata::from_path(&file1).unwrap();
         let meta2 = FileMetadata::from_path(&file2).unwrap();
 
-        // Same size, different mtime -> differs_from returns true
-        assert!(meta1.differs_from(&meta2));
+        // Same size, different mtime -> uncertain, returns false (needs content check)
+        assert!(!meta1.differs_from(&meta2));
+        // but might_be_same should also return false since mtimes differ
+        assert!(!meta1.might_be_same(&meta2));
     }
 
     #[test]
