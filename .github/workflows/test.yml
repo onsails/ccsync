@@ -1,0 +1,42 @@
+name: Test
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+    - master
+  merge_group:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: Test
+    # Skip automated bot PRs (dependabot, etc.)
+    if: github.actor != 'dependabot[bot]'
+    # https://docs.github.com/en/actioIns/using-workflows/workflow-syntax-for-github-actions#example-using-a-multi-dimension-matrix
+    permissions:
+      id-token: "write"
+      contents: "read"
+    steps:
+      # - run: id
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_sha) || github.sha }}
+          repository: ${{ github.repository }}
+          fetch-depth: 0
+
+      - uses: onsails/nix-action@v1
+        with:
+          additionalProfiles: 'nixpkgs#sccache'
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Pre sccache stats
+        shell: bash
+        run: ${SCCACHE_PATH} --show-stats
+      - name: Test
+        shell: bash
+        run: |
+          devenv test
+
