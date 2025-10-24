@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "tags": {
+    "master": {
+      "name": "master",
+      "tasks": [],
+      "metadata": {
+        "createdAt": "2025-10-24T07:10:14.776Z",
+        "updatedAt": "2025-10-24T07:10:14.776Z"
+      }
+    }
+  },
+  "currentTag": "master"
+}
