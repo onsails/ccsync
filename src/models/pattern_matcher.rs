@@ -42,9 +42,13 @@ pub enum PatternError {
 /// assert!(!matcher.should_ignore(Path::new("test.md")));
 /// ```
 pub struct PatternMatcher {
-    /// Gitignore matcher for ignore patterns
+    /// Stored ignore patterns
+    ignore_patterns: Vec<String>,
+    /// Stored include patterns
+    include_patterns: Vec<String>,
+    /// Compiled gitignore matcher for ignore patterns
     ignore_matcher: Option<Gitignore>,
-    /// Gitignore matcher for include patterns (negated ignore)
+    /// Compiled gitignore matcher for include patterns
     include_matcher: Option<Gitignore>,
 }
 
@@ -52,12 +56,16 @@ impl PatternMatcher {
     /// Create a new empty pattern matcher
     pub fn new() -> Self {
         Self {
+            ignore_patterns: Vec::new(),
+            include_patterns: Vec::new(),
             ignore_matcher: None,
             include_matcher: None,
         }
     }
 
     /// Add an ignore pattern (gitignore syntax)
+    ///
+    /// Patterns accumulate - calling this multiple times adds to the pattern list.
     ///
     /// # Arguments
     ///
@@ -67,21 +75,13 @@ impl PatternMatcher {
     ///
     /// `Ok(())` if pattern was added successfully
     pub fn add_ignore_pattern(&mut self, pattern: &str) -> Result<(), PatternError> {
-        let mut builder = GitignoreBuilder::new("");
-        builder.add_line(None, pattern).map_err(|e| {
-            PatternError::BuildError(format!("Invalid ignore pattern '{}': {}", pattern, e))
-        })?;
-
-        self.ignore_matcher = Some(builder.build().map_err(|e| {
-            PatternError::BuildError(format!("Failed to build ignore matcher: {}", e))
-        })?);
-
-        Ok(())
+        self.ignore_patterns.push(pattern.to_string());
+        self.rebuild_ignore_matcher()
     }
 
     /// Add multiple ignore patterns at once
     ///
-    /// Use this method to set all ignore patterns in a single call.
+    /// Patterns accumulate - this adds to any existing patterns.
     ///
     /// # Arguments
     ///
@@ -95,15 +95,19 @@ impl PatternMatcher {
         I: IntoIterator,
         I::Item: AsRef<str>,
     {
+        for pattern in patterns {
+            self.ignore_patterns.push(pattern.as_ref().to_string());
+        }
+        self.rebuild_ignore_matcher()
+    }
+
+    /// Rebuild the ignore matcher from stored patterns
+    fn rebuild_ignore_matcher(&mut self) -> Result<(), PatternError> {
         let mut builder = GitignoreBuilder::new("");
 
-        for pattern in patterns {
-            builder.add_line(None, pattern.as_ref()).map_err(|e| {
-                PatternError::BuildError(format!(
-                    "Invalid ignore pattern '{}': {}",
-                    pattern.as_ref(),
-                    e
-                ))
+        for pattern in &self.ignore_patterns {
+            builder.add_line(None, pattern).map_err(|e| {
+                PatternError::BuildError(format!("Invalid ignore pattern '{}': {}", pattern, e))
             })?;
         }
 
@@ -117,24 +121,23 @@ impl PatternMatcher {
     /// Add an include pattern (higher priority than ignore)
     ///
     /// Include patterns override ignore patterns for matching files.
+    /// Patterns accumulate - calling this multiple times adds to the pattern list.
     ///
     /// # Arguments
     ///
     /// * `pattern` - Pattern string in gitignore format
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` if pattern was added successfully
     pub fn add_include_pattern(&mut self, pattern: &str) -> Result<(), PatternError> {
-        let mut builder = GitignoreBuilder::new("");
-        builder.add_line(None, pattern).map_err(|e| {
-            PatternError::BuildError(format!("Invalid include pattern '{}': {}", pattern, e))
-        })?;
-
-        self.include_matcher = Some(builder.build().map_err(|e| {
-            PatternError::BuildError(format!("Failed to build include matcher: {}", e))
-        })?);
-
-        Ok(())
+        self.include_patterns.push(pattern.to_string());
+        self.rebuild_include_matcher()
     }
 
     /// Add multiple include patterns at once
+    ///
+    /// Patterns accumulate - this adds to any existing patterns.
     ///
     /// # Arguments
     ///
@@ -148,15 +151,19 @@ impl PatternMatcher {
         I: IntoIterator,
         I::Item: AsRef<str>,
     {
+        for pattern in patterns {
+            self.include_patterns.push(pattern.as_ref().to_string());
+        }
+        self.rebuild_include_matcher()
+    }
+
+    /// Rebuild the include matcher from stored patterns
+    fn rebuild_include_matcher(&mut self) -> Result<(), PatternError> {
         let mut builder = GitignoreBuilder::new("");
 
-        for pattern in patterns {
-            builder.add_line(None, pattern.as_ref()).map_err(|e| {
-                PatternError::BuildError(format!(
-                    "Invalid include pattern '{}': {}",
-                    pattern.as_ref(),
-                    e
-                ))
+        for pattern in &self.include_patterns {
+            builder.add_line(None, pattern).map_err(|e| {
+                PatternError::BuildError(format!("Invalid include pattern '{}': {}", pattern, e))
             })?;
         }
 
@@ -340,5 +347,55 @@ mod tests {
         assert!(matcher.should_ignore(Path::new("error.log")));
         assert!(!matcher.should_ignore(Path::new("app.txt")));
         assert!(!matcher.should_ignore(Path::new("log.txt")));
+    }
+
+    #[test]
+    fn test_sequential_pattern_accumulation() {
+        let mut matcher = PatternMatcher::new();
+
+        // Add patterns one at a time - they should accumulate
+        matcher.add_ignore_pattern("*.tmp").unwrap();
+        matcher.add_ignore_pattern("*.log").unwrap();
+        matcher.add_ignore_pattern("*.bak").unwrap();
+
+        // All patterns should be active
+        assert!(matcher.should_ignore(Path::new("test.tmp")));
+        assert!(matcher.should_ignore(Path::new("test.log")));
+        assert!(matcher.should_ignore(Path::new("test.bak")));
+        assert!(!matcher.should_ignore(Path::new("test.txt")));
+    }
+
+    #[test]
+    fn test_mixed_add_methods_accumulate() {
+        let mut matcher = PatternMatcher::new();
+
+        // Add single pattern
+        matcher.add_ignore_pattern("*.tmp").unwrap();
+
+        // Add multiple patterns - should accumulate with previous
+        matcher.add_ignore_patterns(&["*.log", "*.bak"]).unwrap();
+
+        // All three patterns should be active
+        assert!(matcher.should_ignore(Path::new("test.tmp")));
+        assert!(matcher.should_ignore(Path::new("test.log")));
+        assert!(matcher.should_ignore(Path::new("test.bak")));
+        assert!(!matcher.should_ignore(Path::new("test.txt")));
+    }
+
+    #[test]
+    fn test_include_patterns_accumulate() {
+        let mut matcher = PatternMatcher::new();
+
+        // Ignore all .md files
+        matcher.add_ignore_pattern("*.md").unwrap();
+
+        // Add include patterns one at a time - should accumulate
+        matcher.add_include_pattern("important.md").unwrap();
+        matcher.add_include_pattern("readme.md").unwrap();
+
+        // Both include patterns should override the ignore
+        assert!(!matcher.should_ignore(Path::new("important.md")));
+        assert!(!matcher.should_ignore(Path::new("readme.md")));
+        assert!(matcher.should_ignore(Path::new("other.md")));
     }
 }
