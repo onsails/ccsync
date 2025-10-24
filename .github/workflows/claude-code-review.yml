@@ -12,11 +12,8 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Skip automated bot PRs (dependabot, etc.)
+    if: github.actor != 'dependabot[bot]'
 
     runs-on: ubuntu-latest
     permissions:
@@ -51,7 +48,14 @@ jobs:
 
             Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
 
+            IMPORTANT: For all Rust/Cargo commands, use `devenv shell --` prefix:
+            - Use: `devenv shell -- cargo clippy --workspace -- -D warnings`
+            - Use: `devenv shell -- cargo test --workspace`
+            - Use: `devenv shell -- cargo fmt --all`
+            - Use: `devenv shell -- cargo check --workspace`
+            Also run review-rust-code agent to get additional insights on Rust code.
+            Also make sure that all taskmaster tasks we worked on in this PR have corresponding status (like in progress, done, etc).
+
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
           claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
-
