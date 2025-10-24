@@ -241,7 +241,7 @@
               1
             ],
             "details": "Detect and load configuration files from CLI flag, .ccsync.local, .ccsync, $XDG_CONFIG_HOME/ccsync/config, and ~/.config/ccsync/config. Merge configurations in the correct order, ensuring that higher-precedence sources override lower ones. Implement merging logic for nested structures, lists, and boolean overrides. Provide clear diagnostics for precedence and source of each setting.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for merging logic, including precedence and overrides. Integration tests loading configs from multiple sources and verifying the final merged result."
           },
           {
@@ -1065,7 +1065,7 @@
     ],
     "metadata": {
       "created": "2025-10-24T08:46:33.654Z",
-      "updated": "2025-10-24T11:57:12.587Z",
+      "updated": "2025-10-24T12:39:44.588Z",
       "description": "Tasks for master context"
     }
   }

@@ -4,3 +4,4 @@
 //! sync state, and other domain models used throughout the application.
 
 pub mod config;
+pub mod config_loader;
