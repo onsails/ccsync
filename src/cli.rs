@@ -183,7 +183,12 @@ mod tests {
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
-            Commands::ToLocal { dry_run, non_interactive, yes_all, .. } => {
+            Commands::ToLocal {
+                dry_run,
+                non_interactive,
+                yes_all,
+                ..
+            } => {
                 assert!(!dry_run);
                 assert!(!non_interactive);
                 assert!(!yes_all);
@@ -194,11 +199,23 @@ mod tests {
 
     #[test]
     fn test_to_local_with_flags() {
-        let args = vec!["ccsync", "to-local", "--dry-run", "--yes-all", "-t", "commands"];
+        let args = vec![
+            "ccsync",
+            "to-local",
+            "--dry-run",
+            "--yes-all",
+            "-t",
+            "commands",
+        ];
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
-            Commands::ToLocal { dry_run, yes_all, r#type, .. } => {
+            Commands::ToLocal {
+                dry_run,
+                yes_all,
+                r#type,
+                ..
+            } => {
                 assert!(dry_run);
                 assert!(yes_all);
                 assert_eq!(r#type.len(), 1);
@@ -276,9 +293,11 @@ mod tests {
     fn test_path_overrides() {
         let args = vec![
             "ccsync",
-            "--global-path", "/custom/global",
-            "--local-path", "/custom/local",
-            "status"
+            "--global-path",
+            "/custom/global",
+            "--local-path",
+            "/custom/local",
+            "status",
         ];
         let cli = Cli::try_parse_from(args).unwrap();
 
@@ -296,7 +315,16 @@ mod tests {
 
     #[test]
     fn test_multiple_types() {
-        let args = vec!["ccsync", "to-local", "-t", "commands", "-t", "skills", "-t", "subagents"];
+        let args = vec![
+            "ccsync",
+            "to-local",
+            "-t",
+            "commands",
+            "-t",
+            "skills",
+            "-t",
+            "subagents",
+        ];
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
@@ -355,7 +383,9 @@ mod tests {
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
-            Commands::ToLocal { preserve_symlinks, .. } => {
+            Commands::ToLocal {
+                preserve_symlinks, ..
+            } => {
                 assert!(preserve_symlinks);
             }
             _ => panic!("Expected ToLocal command"),

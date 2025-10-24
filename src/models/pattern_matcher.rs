@@ -81,9 +81,15 @@ impl PatternMatcher {
 
     /// Add multiple ignore patterns at once
     ///
+    /// Use this method to set all ignore patterns in a single call.
+    ///
     /// # Arguments
     ///
     /// * `patterns` - Iterator of pattern strings
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` if all patterns were added successfully
     pub fn add_ignore_patterns<I>(&mut self, patterns: I) -> Result<(), PatternError>
     where
         I: IntoIterator,
@@ -129,6 +135,14 @@ impl PatternMatcher {
     }
 
     /// Add multiple include patterns at once
+    ///
+    /// # Arguments
+    ///
+    /// * `patterns` - Iterator of pattern strings
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` if all patterns were added successfully
     pub fn add_include_patterns<I>(&mut self, patterns: I) -> Result<(), PatternError>
     where
         I: IntoIterator,
@@ -193,7 +207,6 @@ impl Default for PatternMatcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn test_new_matcher() {

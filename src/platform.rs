@@ -20,7 +20,11 @@ pub fn platform_name() -> &'static str {
 
 /// Check if the current platform is supported.
 pub fn is_supported_platform() -> bool {
-    cfg!(any(target_os = "linux", target_os = "macos", target_os = "windows"))
+    cfg!(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "windows"
+    ))
 }
 
 #[cfg(test)]

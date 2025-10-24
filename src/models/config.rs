@@ -31,7 +31,9 @@ pub enum ConfigError {
     InvalidConfig { path: PathBuf, message: String },
 
     /// Configuration file too large
-    #[error("Config file {path} exceeds maximum size of {max_size} bytes (actual: {actual_size} bytes)")]
+    #[error(
+        "Config file {path} exceeds maximum size of {max_size} bytes (actual: {actual_size} bytes)"
+    )]
     FileTooLarge {
         path: PathBuf,
         max_size: u64,
@@ -660,8 +662,8 @@ to_local:
 
     #[test]
     fn test_file_size_limit() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         // Create a temporary file larger than MAX_CONFIG_SIZE
         let mut temp_file = NamedTempFile::new().unwrap();
@@ -679,8 +681,8 @@ to_local:
 
     #[test]
     fn test_from_file_auto_validates() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         // Create a config with invalid content (empty types array)
         let mut temp_file = NamedTempFile::new().unwrap();
@@ -702,8 +704,8 @@ to_local:
 
     #[test]
     fn test_from_file_success() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let mut temp_file = NamedTempFile::new().unwrap();
         let valid_yaml = r#"
