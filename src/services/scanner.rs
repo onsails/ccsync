@@ -61,7 +61,7 @@ impl Scanner {
     ///
     /// This method recursively traverses the given directory and collects
     /// all files found, while handling symlinks according to the configured options.
-    pub(crate) fn scan<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
+    pub(crate) fn scan<P: AsRef<Path>>(&self, path: P) -> anyhow::Result<ScanResult> {
         let path = path.as_ref();
         let mut result = ScanResult {
             files: Vec::new(),
@@ -126,7 +126,7 @@ impl Scanner {
     /// to avoid confusion and ensure we only find real .claude directories.
     /// However, when scanning the contents of found .claude directories,
     /// the `follow_symlinks` option from ScanOptions is respected.
-    pub(crate) fn scan_claude_dirs<P: AsRef<Path>>(&mut self, path: P) -> anyhow::Result<ScanResult> {
+    pub(crate) fn scan_claude_dirs<P: AsRef<Path>>(&self, path: P) -> anyhow::Result<ScanResult> {
         let path = path.as_ref();
         let mut result = ScanResult {
             files: Vec::new(),
@@ -147,13 +147,25 @@ impl Scanner {
                 e.file_name() == ".claude" || e.file_type().is_dir()
             });
 
-        for entry in walker.filter_map(|e| e.ok()) {
-            if entry.file_name() == ".claude" && entry.file_type().is_dir() {
-                // Scan this .claude directory
-                let scan_result = self.scan(entry.path())?;
-                result.files.extend(scan_result.files);
-                result.broken_symlinks.extend(scan_result.broken_symlinks);
-                result.symlink_loops.extend(scan_result.symlink_loops);
+        for entry in walker {
+            match entry {
+                Ok(entry) => {
+                    if entry.file_name() == ".claude" && entry.file_type().is_dir() {
+                        // Scan this .claude directory
+                        let scan_result = self.scan(entry.path())?;
+                        result.files.extend(scan_result.files);
+                        result.broken_symlinks.extend(scan_result.broken_symlinks);
+                        result.symlink_loops.extend(scan_result.symlink_loops);
+                    }
+                }
+                Err(e) => {
+                    // Fail fast on errors when searching for .claude directories
+                    return Err(anyhow::anyhow!(
+                        "Error searching for .claude directories{}: {}",
+                        e.path().map(|p| format!(" at {}", p.display())).unwrap_or_default(),
+                        e
+                    ));
+                }
             }
         }
 
