@@ -135,6 +135,23 @@ impl Scanner {
             }
         }
 
+        // Validate that all discovered files are within the scanned directory
+        // This prevents symlink escape attacks where a symlink points outside
+        // the intended scan boundary (e.g., ~/.claude/evil -> /etc/passwd)
+        if self.options.follow_symlinks {
+            for file in &result.files {
+                if let Ok(canonical_file) = file.canonicalize() {
+                    if !canonical_file.starts_with(&canonical_path) {
+                        return Err(anyhow::anyhow!(
+                            "Security violation: symlink at {} leads outside scan directory to {}",
+                            file.display(),
+                            canonical_file.display()
+                        ));
+                    }
+                }
+            }
+        }
+
         Ok(result)
     }
 
@@ -149,6 +166,11 @@ impl Scanner {
     /// the `follow_symlinks` option from ScanOptions is respected.
     pub(crate) fn scan_claude_dirs<P: AsRef<Path>>(&self, path: P) -> anyhow::Result<ScanResult> {
         let path = path.as_ref();
+
+        // Canonicalize path for security (consistent with scan method)
+        let canonical_path = path.canonicalize()
+            .map_err(|e| anyhow::anyhow!("Invalid path {}: {}", path.display(), e))?;
+
         let mut result = ScanResult {
             files: Vec::new(),
             broken_symlinks: Vec::new(),
@@ -160,7 +182,7 @@ impl Scanner {
         // directories to ensure we only find real .claude dirs, not symlinks to them.
         // This prevents confusion where a symlink to ~/.claude would be treated
         // as a local .claude directory.
-        let walker = WalkDir::new(path)
+        let walker = WalkDir::new(&canonical_path)
             .follow_links(false)
             .into_iter()
             .filter_entry(|e| {
