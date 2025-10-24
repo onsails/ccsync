@@ -9,7 +9,7 @@ mod models;
 mod platform;
 mod services;
 
-use errors::Result;
+use anyhow::Result;
 
 fn main() -> Result<()> {
     // Check platform compatibility
@@ -19,12 +19,42 @@ fn main() -> Result<()> {
     }
 
     // Parse CLI arguments
-    let _cli = cli::Cli::parse();
+    let cli = cli::Cli::parse_args();
 
-    // TODO: Implement command dispatch in Task 2
-    println!("ccsync v{}", env!("CARGO_PKG_VERSION"));
-    println!("Platform: {}", platform::platform_name());
-    println!("Bidirectional sync tool for Claude Code configuration files");
+    // Enable verbose logging if requested
+    if cli.verbose {
+        println!("Verbose mode enabled");
+        println!("Platform: {}", platform::platform_name());
+    }
+
+    // Dispatch command
+    match &cli.command {
+        cli::Commands::ToLocal { .. } => {
+            println!("Executing to-local command...");
+            // TODO: Implement in Task 6
+        }
+        cli::Commands::ToGlobal { .. } => {
+            println!("Executing to-global command...");
+            // TODO: Implement in Task 6
+        }
+        cli::Commands::Status { .. } => {
+            println!("Executing status command...");
+            // TODO: Implement in Task 14
+        }
+        cli::Commands::Diff { .. } => {
+            println!("Executing diff command...");
+            // TODO: Implement in Task 15
+        }
+        cli::Commands::Config { show, validate, .. } => {
+            if *show {
+                println!("Showing configuration...");
+            }
+            if *validate {
+                println!("Validating configuration...");
+            }
+            // TODO: Implement in Task 11
+        }
+    }
 
     Ok(())
 }

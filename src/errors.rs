@@ -2,47 +2,24 @@
 //!
 //! This module defines custom error types and error handling logic for the application.
 //! It provides clear, user-friendly error messages and appropriate exit codes.
+//!
+//! Uses `thiserror` for library error types following Rust best practices.
 
-use std::fmt;
+use thiserror::Error;
 
 /// Main error type for ccsync operations.
-#[derive(Debug)]
+///
+/// This type will be used in future tasks for error handling across the codebase.
+#[derive(Error, Debug)]
+#[allow(dead_code)] // Will be used in Task 3+
 pub enum CcsyncError {
     /// IO operation failed
-    Io(std::io::Error),
-    /// Configuration parsing error
-    Config(String),
-    /// File sync error
-    Sync(String),
-    /// Path validation error
-    Path(String),
-}
-
-impl fmt::Display for CcsyncError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CcsyncError::Io(err) => write!(f, "IO error: {}", err),
-            CcsyncError::Config(msg) => write!(f, "Configuration error: {}", msg),
-            CcsyncError::Sync(msg) => write!(f, "Sync error: {}", msg),
-            CcsyncError::Path(msg) => write!(f, "Path error: {}", msg),
-        }
-    }
-}
-
-impl std::error::Error for CcsyncError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            CcsyncError::Io(err) => Some(err),
-            _ => None,
-        }
-    }
-}
-
-impl From<std::io::Error> for CcsyncError {
-    fn from(err: std::io::Error) -> Self {
-        CcsyncError::Io(err)
-    }
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 /// Result type alias for ccsync operations.
+///
+/// This type will be used in future tasks for function return types.
+#[allow(dead_code)] // Will be used in Task 3+
 pub type Result<T> = std::result::Result<T, CcsyncError>;
