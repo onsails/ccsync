@@ -12,6 +12,7 @@ concurrency:
 jobs:
   test:
     name: Test
+    runs-on: ubuntu-latest
     # Skip automated bot PRs (dependabot, etc.)
     if: github.actor != 'dependabot[bot]'
     # https://docs.github.com/en/actioIns/using-workflows/workflow-syntax-for-github-actions#example-using-a-multi-dimension-matrix
