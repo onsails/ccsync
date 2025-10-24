@@ -230,7 +230,7 @@
             "description": "Set up robust parsing of configuration files in both YAML and TOML formats using Serde, supporting comments and human-readable syntax.",
             "dependencies": [],
             "details": "Define Rust structs representing the configuration schema. Use serde with serde_yaml and toml crates to deserialize config files from disk. Ensure support for comments and optional fields. Validate that both YAML and TOML files can be parsed into the same Rust data structures. Handle errors gracefully and provide clear error messages for invalid syntax.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for parsing valid and invalid YAML/TOML files. Fuzz tests for malformed configs. Assert correct struct population and error handling."
           },
           {
@@ -1065,7 +1065,7 @@
     ],
     "metadata": {
       "created": "2025-10-24T08:46:33.654Z",
-      "updated": "2025-10-24T10:27:04.897Z",
+      "updated": "2025-10-24T11:57:12.587Z",
       "description": "Tasks for master context"
     }
   }
