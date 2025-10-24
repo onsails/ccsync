@@ -32,6 +32,7 @@ serde = { version = "~1.0.217", features = ["derive"] }
 serde_yml = "~0.0.12"
 dirs = "~6.0.0"
 ignore = "~0.4.24"
+similar = "~2.7.0"
 
 # Platform-specific dependencies
 [target.'cfg(unix)'.dependencies]
