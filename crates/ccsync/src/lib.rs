@@ -18,3 +18,7 @@ pub mod error {
 /// File scanning functionality
 #[cfg_attr(not(test), allow(dead_code))]
 pub(crate) mod scanner;
+
+/// File comparison and conflict detection
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) mod comparison;

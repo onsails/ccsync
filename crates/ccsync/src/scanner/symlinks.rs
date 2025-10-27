@@ -30,6 +30,7 @@ impl ResolvedPath {
 
     /// Get a reference to the inner path
     #[must_use]
+    #[allow(dead_code)]
     pub fn path(&self) -> &Path {
         match self {
             Self::Regular(p) | Self::Symlink(p) | Self::Resolved(p) => p,
