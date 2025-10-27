@@ -14,3 +14,7 @@ pub mod error {
     /// Result type alias using `anyhow::Error`
     pub type Result<T> = anyhow::Result<T>;
 }
+
+/// File scanning functionality
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) mod scanner;
