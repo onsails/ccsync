@@ -70,15 +70,34 @@ impl ConfigMerger {
 
     /// Load and merge a single config file into the existing config
     fn merge_into(base: &mut Config, path: &Path) -> Result<()> {
+        // Security: Limit config file size to 1MB
+        const MAX_CONFIG_SIZE: u64 = 1024 * 1024;
+        let metadata = fs::metadata(path)
+            .with_context(|| format!("Failed to read metadata for: {}", path.display()))?;
+
+        if metadata.len() > MAX_CONFIG_SIZE {
+            anyhow::bail!(
+                "Config file too large: {} bytes (max: {} bytes)",
+                metadata.len(),
+                MAX_CONFIG_SIZE
+            );
+        }
+
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read config file: {}", path.display()))?;
 
         let config: Config = toml::from_str(&content)
             .with_context(|| format!("Failed to parse config file: {}", path.display()))?;
 
-        // Merge: additive for arrays, override for Option<bool>
+        // Merge: additive for arrays (with deduplication), override for Option<bool>
         base.ignore.extend(config.ignore);
+        base.ignore.sort();
+        base.ignore.dedup();
+
         base.include.extend(config.include);
+        base.include.sort();
+        base.include.dedup();
+
         base.rules.extend(config.rules);
 
         // Override booleans only if explicitly set in higher-precedence config
