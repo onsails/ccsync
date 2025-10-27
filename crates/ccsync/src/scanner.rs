@@ -47,7 +47,7 @@ pub struct Scanner {
 impl Scanner {
     /// Create a new scanner with the given configuration
     #[must_use]
-    pub fn new(filter: FileFilter, preserve_symlinks: bool) -> Self {
+    pub const fn new(filter: FileFilter, preserve_symlinks: bool) -> Self {
         Self {
             filter,
             symlink_resolver: SymlinkResolver::new(preserve_symlinks),
@@ -64,17 +64,19 @@ impl Scanner {
         let mut files = Vec::new();
 
         // Scan each directory type with appropriate mode
-        if let Ok(agents) = Self::scan_directory(&base_path.join("agents"), ScanMode::Flat) {
-            files.extend(agents);
+        match Self::scan_directory(&base_path.join("agents"), ScanMode::Flat) {
+            Ok(agents) => files.extend(agents),
+            Err(e) => eprintln!("Warning: Failed to scan agents directory: {e}"),
         }
 
-        if let Ok(skills) = Self::scan_directory(&base_path.join("skills"), ScanMode::OneLevel) {
-            files.extend(skills);
+        match Self::scan_directory(&base_path.join("skills"), ScanMode::OneLevel) {
+            Ok(skills) => files.extend(skills),
+            Err(e) => eprintln!("Warning: Failed to scan skills directory: {e}"),
         }
 
-        if let Ok(commands) = Self::scan_directory(&base_path.join("commands"), ScanMode::Recursive)
-        {
-            files.extend(commands);
+        match Self::scan_directory(&base_path.join("commands"), ScanMode::Recursive) {
+            Ok(commands) => files.extend(commands),
+            Err(e) => eprintln!("Warning: Failed to scan commands directory: {e}"),
         }
 
         // Apply filtering and symlink resolution

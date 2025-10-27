@@ -39,8 +39,6 @@ impl ResolvedPath {
 
 /// Symlink resolver with loop detection
 pub struct SymlinkResolver {
-    /// Set of canonicalized paths we've visited (for loop detection)
-    visited: HashSet<PathBuf>,
     /// Whether to preserve symlinks instead of resolving them
     preserve: bool,
 }
@@ -48,11 +46,8 @@ pub struct SymlinkResolver {
 impl SymlinkResolver {
     /// Create a new symlink resolver
     #[must_use]
-    pub fn new(preserve: bool) -> Self {
-        Self {
-            visited: HashSet::new(),
-            preserve,
-        }
+    pub const fn new(preserve: bool) -> Self {
+        Self { preserve }
     }
 
     /// Resolve a path, handling symlinks appropriately
@@ -77,34 +72,58 @@ impl SymlinkResolver {
             return Ok(ResolvedPath::Symlink(path.to_path_buf()));
         }
 
-        // Resolve the symlink
-        let target = fs::read_link(path)
-            .with_context(|| format!("Failed to read symlink {}", path.display()))?;
-
-        // Try to canonicalize (this will fail if target doesn't exist)
-        let canonical = dunce::canonicalize(&target).with_context(|| {
-            format!(
-                "Broken symlink: {} -> {}",
-                path.display(),
-                target.display()
-            )
-        })?;
-
-        // Check for loops
-        if !self.visited.insert(canonical.clone()) {
-            bail!(
-                "Symlink loop detected: {} -> {}",
-                path.display(),
-                canonical.display()
-            );
-        }
-
-        Ok(ResolvedPath::Resolved(canonical))
+        // Resolve the symlink with loop detection
+        Self::resolve_symlink_chain(path)
     }
 
-    /// Clear the visited set (useful for processing multiple independent trees)
-    pub fn clear(&mut self) {
-        self.visited.clear();
+    /// Resolve a symlink chain, detecting loops
+    fn resolve_symlink_chain(path: &Path) -> Result<ResolvedPath> {
+        let mut visited = HashSet::new();
+        let mut current = path.to_path_buf();
+
+        // Follow the symlink chain
+        loop {
+            // Canonicalize the current path to detect loops
+            let Ok(canonical) = dunce::canonicalize(&current) else {
+                // If canonicalization fails, try to get more context
+                let target = fs::read_link(&current).with_context(|| {
+                    format!("Failed to read symlink {}", current.display())
+                })?;
+
+                // Handle relative symlinks
+                let absolute_target = if target.is_relative() {
+                    current
+                        .parent()
+                        .unwrap_or_else(|| Path::new("."))
+                        .join(&target)
+                } else {
+                    target
+                };
+
+                bail!(
+                    "Broken symlink: {} -> {}",
+                    path.display(),
+                    absolute_target.display()
+                );
+            };
+
+            // Check for loops
+            if !visited.insert(canonical.clone()) {
+                bail!("Symlink loop detected: {}", path.display());
+            }
+
+            // Check if the canonical path is still a symlink
+            let metadata = fs::symlink_metadata(&canonical)
+                .with_context(|| format!("Failed to read metadata for {}", canonical.display()))?;
+
+            if !metadata.is_symlink() {
+                // We've reached the end of the chain
+                return Ok(ResolvedPath::Resolved(canonical));
+            }
+
+            // Continue following the chain
+            current = canonical;
+        }
     }
 }
 
@@ -203,5 +222,36 @@ mod tests {
 
         // The result will be an error due to broken symlink or loop detection
         assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_multiple_symlinks_same_target() {
+        let tmp = TempDir::new().unwrap();
+
+        // Create a shared target
+        let target = tmp.path().join("shared_target.txt");
+        fs::write(&target, "shared content").unwrap();
+
+        // Create two independent symlinks pointing to the same target
+        let link1 = tmp.path().join("link1.txt");
+        let link2 = tmp.path().join("link2.txt");
+        unix_fs::symlink(&target, &link1).unwrap();
+        unix_fs::symlink(&target, &link2).unwrap();
+
+        let mut resolver = SymlinkResolver::new(false);
+
+        // Resolve both symlinks - neither should fail
+        let resolved1 = resolver.resolve(&link1).unwrap();
+        let resolved2 = resolver.resolve(&link2).unwrap();
+
+        // Both should resolve to the same target
+        match (resolved1, resolved2) {
+            (ResolvedPath::Resolved(p1), ResolvedPath::Resolved(p2)) => {
+                assert_eq!(p1, p2);
+                assert_eq!(p1, dunce::canonicalize(&target).unwrap());
+            }
+            _ => panic!("Expected both to be Resolved variants"),
+        }
     }
 }

@@ -12,7 +12,6 @@ categories = ["command-line-utilities", "development-tools"]
 [dependencies]
 anyhow.workspace = true
 walkdir = "~2.5.0"
-dirs = "~6.0.0"
 dunce = "~1.0.5"
 
 [dev-dependencies]

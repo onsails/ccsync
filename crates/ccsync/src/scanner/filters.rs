@@ -9,8 +9,8 @@ pub enum Pattern {
     Extension(String),
     /// Match files with a specific name (e.g., "SKILL.md")
     FileName(String),
-    /// Match files by path glob pattern
-    Glob(String),
+    /// Match files whose path contains a substring
+    Contains(String),
 }
 
 impl Pattern {
@@ -20,10 +20,9 @@ impl Pattern {
         match self {
             Self::Extension(ext) => path.extension().is_some_and(|e| e == ext.as_str()),
             Self::FileName(name) => path.file_name().is_some_and(|n| n == name.as_str()),
-            Self::Glob(pattern) => {
-                // Simple glob matching (could be enhanced with glob crate if needed)
-                // For now, just check if the path contains the pattern
-                path.to_string_lossy().contains(pattern)
+            Self::Contains(substring) => {
+                // Check if the path contains the substring
+                path.to_str().is_some_and(|s| s.contains(substring))
             }
         }
     }
@@ -100,8 +99,8 @@ mod tests {
     }
 
     #[test]
-    fn test_glob_pattern() {
-        let pattern = Pattern::Glob("skill".to_string());
+    fn test_contains_pattern() {
+        let pattern = Pattern::Contains("skill".to_string());
         assert!(pattern.matches(&PathBuf::from("/skills/my-skill/SKILL.md")));
         assert!(!pattern.matches(&PathBuf::from("/agents/agent.md")));
     }
