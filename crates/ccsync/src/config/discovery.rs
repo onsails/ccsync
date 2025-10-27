@@ -28,7 +28,7 @@ impl ConfigDiscovery {
 
     /// Discover all available configuration files
     ///
-    /// Discover all available configuration files
+    /// Returns a `ConfigFiles` struct with paths to discovered configs.
     pub fn discover(cli_path: Option<&Path>) -> ConfigFiles {
         let cli = cli_path.and_then(|p| {
             if p.exists() {

@@ -78,13 +78,6 @@ pub struct Config {
     pub rules: Vec<SyncRule>,
 }
 
-impl Config {
-    /// Create a new empty configuration
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 
 #[cfg(test)]
 mod tests {

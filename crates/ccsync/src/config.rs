@@ -25,21 +25,13 @@ pub use validation::ConfigValidator;
 use crate::error::Result;
 
 /// Configuration manager that coordinates discovery, parsing, merging, and validation
-pub struct ConfigManager {
-    discovery: ConfigDiscovery,
-    merger: ConfigMerger,
-    validator: ConfigValidator,
-}
+pub struct ConfigManager;
 
 impl ConfigManager {
     /// Create a new configuration manager
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            discovery: ConfigDiscovery::new(),
-            merger: ConfigMerger::new(),
-            validator: ConfigValidator::new(),
-        }
+        Self
     }
 
     /// Load and merge configuration from all sources
@@ -73,11 +65,8 @@ mod tests {
 
     #[test]
     fn test_config_manager_creation() {
-        let manager = ConfigManager::new();
-        let default_manager = ConfigManager::default();
-
-        // Both should be valid
-        assert!(std::ptr::addr_of!(manager).is_null() == false);
-        assert!(std::ptr::addr_of!(default_manager).is_null() == false);
+        let _manager = ConfigManager::new();
+        let _default_manager = ConfigManager::default();
+        // Successfully created without panic
     }
 }

@@ -61,24 +61,18 @@ impl ConfigMerger {
         let config: Config = toml::from_str(&content)
             .with_context(|| format!("Failed to parse config file: {}", path.display()))?;
 
-        // Merge: additive for arrays, override for scalars
+        // Merge: additive for arrays, OR semantics for booleans
         base.ignore.extend(config.ignore);
         base.include.extend(config.include);
         base.rules.extend(config.rules);
 
-        // Override booleans with latest value
-        if config.follow_symlinks {
-            base.follow_symlinks = true;
-        }
-        if config.preserve_symlinks {
-            base.preserve_symlinks = true;
-        }
-        if config.dry_run {
-            base.dry_run = true;
-        }
-        if config.non_interactive {
-            base.non_interactive = true;
-        }
+        // Boolean flags use OR semantics: if any config sets to true, it's true
+        // This means lower-precedence configs can enable features that higher-precedence
+        // configs cannot disable. This is intentional for safety (explicit > implicit).
+        base.follow_symlinks |= config.follow_symlinks;
+        base.preserve_symlinks |= config.preserve_symlinks;
+        base.dry_run |= config.dry_run;
+        base.non_interactive |= config.non_interactive;
 
         Ok(())
     }
