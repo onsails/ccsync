@@ -40,19 +40,20 @@ fn test_full_scan_all_directory_types() {
 
     // Run scanner
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, false);
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, false);
+    let result = scanner.scan(tmp.path()).unwrap();
 
     // Should find: 2 agents, 2 skills, 2 commands = 6 total
-    assert_eq!(files.len(), 6);
+    assert_eq!(result.files.len(), 6);
 
     // Verify each type is found
-    assert!(files.iter().any(|f| f.path.ends_with("agent1.md")));
-    assert!(files.iter().any(|f| f.path.ends_with("agent2.md")));
-    assert!(files.iter().any(|f| f.path.ends_with("skill-1/SKILL.md")));
-    assert!(files.iter().any(|f| f.path.ends_with("skill-2/SKILL.md")));
-    assert!(files.iter().any(|f| f.path.ends_with("root-command.md")));
-    assert!(files
+    assert!(result.files.iter().any(|f| f.path.ends_with("agent1.md")));
+    assert!(result.files.iter().any(|f| f.path.ends_with("agent2.md")));
+    assert!(result.files.iter().any(|f| f.path.ends_with("skill-1/SKILL.md")));
+    assert!(result.files.iter().any(|f| f.path.ends_with("skill-2/SKILL.md")));
+    assert!(result.files.iter().any(|f| f.path.ends_with("root-command.md")));
+    assert!(result
+        .files
         .iter()
         .any(|f| f.path.ends_with("subdir/nested-command.md")));
 }
@@ -69,12 +70,12 @@ fn test_scan_missing_directories() {
     // Skills and commands directories don't exist
 
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, false);
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, false);
+    let result = scanner.scan(tmp.path()).unwrap();
 
     // Should only find the one agent file
-    assert_eq!(files.len(), 1);
-    assert!(files[0].path.ends_with("agent.md"));
+    assert_eq!(result.files.len(), 1);
+    assert!(result.files[0].path.ends_with("agent.md"));
 }
 
 #[test]
@@ -87,10 +88,10 @@ fn test_scan_empty_directories() {
     fs::create_dir(tmp.path().join("commands")).unwrap();
 
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, false);
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, false);
+    let result = scanner.scan(tmp.path()).unwrap();
 
-    assert_eq!(files.len(), 0);
+    assert_eq!(result.files.len(), 0);
 }
 
 #[cfg(unix)]
@@ -112,11 +113,11 @@ fn test_scan_with_symlinks() {
     unix_fs::symlink(&target, &link).unwrap();
 
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, false);
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, false);
+    let result = scanner.scan(tmp.path()).unwrap();
 
     // Should resolve both files
-    assert_eq!(files.len(), 2);
+    assert_eq!(result.files.len(), 2);
 }
 
 #[cfg(unix)]
@@ -137,12 +138,13 @@ fn test_scan_with_broken_symlink() {
     unix_fs::symlink("/nonexistent/file.md", &broken).unwrap();
 
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, false);
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, false);
+    let result = scanner.scan(tmp.path()).unwrap();
 
     // Should find only the good file (broken symlink should be skipped with warning)
-    assert_eq!(files.len(), 1);
-    assert!(files[0].path.ends_with("good.md"));
+    assert_eq!(result.files.len(), 1);
+    assert!(result.files[0].path.ends_with("good.md"));
+    // Note: Warnings are collected for broken symlinks during resolution
 }
 
 #[cfg(unix)]
@@ -162,11 +164,11 @@ fn test_scan_preserve_symlinks() {
     unix_fs::symlink(&target, &link).unwrap();
 
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, true); // preserve_symlinks = true
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, true); // preserve_symlinks = true
+    let result = scanner.scan(tmp.path()).unwrap();
 
     // Both should be found, link preserved as-is
-    assert_eq!(files.len(), 2);
+    assert_eq!(result.files.len(), 2);
 }
 
 #[test]
@@ -184,8 +186,8 @@ fn test_scan_cross_platform_paths() {
     fs::write(agents.join("unicode-中文.md"), "unicode").unwrap();
 
     let filter = FileFilter::new();
-    let mut scanner = Scanner::new(filter, false);
-    let files = scanner.scan(tmp.path()).unwrap();
+    let scanner = Scanner::new(filter, false);
+    let result = scanner.scan(tmp.path()).unwrap();
 
-    assert_eq!(files.len(), 2);
+    assert_eq!(result.files.len(), 2);
 }

@@ -58,7 +58,7 @@ impl SymlinkResolver {
     /// - A symlink is broken (target doesn't exist)
     /// - A symlink loop is detected
     /// - Path canonicalization fails
-    pub fn resolve(&mut self, path: &Path) -> Result<ResolvedPath> {
+    pub fn resolve(&self, path: &Path) -> Result<ResolvedPath> {
         // Check if it's a symlink
         let metadata = fs::symlink_metadata(path)
             .with_context(|| format!("Failed to read metadata for {}", path.display()))?;
@@ -142,7 +142,7 @@ mod tests {
         let file = tmp.path().join("regular.txt");
         fs::write(&file, "content").unwrap();
 
-        let mut resolver = SymlinkResolver::new(false);
+        let resolver = SymlinkResolver::new(false);
         let resolved = resolver.resolve(&file).unwrap();
 
         assert_eq!(resolved, ResolvedPath::Regular(file));
@@ -158,7 +158,7 @@ mod tests {
         let link = tmp.path().join("link.txt");
         unix_fs::symlink(&target, &link).unwrap();
 
-        let mut resolver = SymlinkResolver::new(false);
+        let resolver = SymlinkResolver::new(false);
         let resolved = resolver.resolve(&link).unwrap();
 
         match resolved {
@@ -179,7 +179,7 @@ mod tests {
         let link = tmp.path().join("link.txt");
         unix_fs::symlink(&target, &link).unwrap();
 
-        let mut resolver = SymlinkResolver::new(true);
+        let resolver = SymlinkResolver::new(true);
         let resolved = resolver.resolve(&link).unwrap();
 
         assert_eq!(resolved, ResolvedPath::Symlink(link));
@@ -192,7 +192,7 @@ mod tests {
         let link = tmp.path().join("broken.txt");
         unix_fs::symlink("/nonexistent/target.txt", &link).unwrap();
 
-        let mut resolver = SymlinkResolver::new(false);
+        let resolver = SymlinkResolver::new(false);
         let result = resolver.resolve(&link);
 
         assert!(result.is_err());
@@ -213,7 +213,7 @@ mod tests {
         unix_fs::symlink(&link2, &link1).unwrap();
         unix_fs::symlink(&link1, &link2).unwrap();
 
-        let mut resolver = SymlinkResolver::new(false);
+        let resolver = SymlinkResolver::new(false);
 
         // First resolution might work (depending on which link is accessed first)
         // But following the chain should detect the loop
@@ -239,7 +239,7 @@ mod tests {
         unix_fs::symlink(&target, &link1).unwrap();
         unix_fs::symlink(&target, &link2).unwrap();
 
-        let mut resolver = SymlinkResolver::new(false);
+        let resolver = SymlinkResolver::new(false);
 
         // Resolve both symlinks - neither should fail
         let resolved1 = resolver.resolve(&link1).unwrap();

@@ -38,6 +38,15 @@ pub struct ScannedFile {
     pub mode: ScanMode,
 }
 
+/// Result of a scan operation with optional warnings
+#[derive(Debug, Clone)]
+pub struct ScanResult {
+    /// Successfully scanned files
+    pub files: Vec<ScannedFile>,
+    /// Non-fatal warnings encountered during scanning
+    pub warnings: Vec<String>,
+}
+
 /// Main scanner coordinator
 pub struct Scanner {
     filter: FileFilter,
@@ -60,23 +69,24 @@ impl Scanner {
     ///
     /// Returns an error if directory traversal fails or if there are
     /// permission issues reading directories.
-    pub fn scan(&mut self, base_path: &Path) -> Result<Vec<ScannedFile>> {
+    pub fn scan(&self, base_path: &Path) -> Result<ScanResult> {
         let mut files = Vec::new();
+        let mut warnings = Vec::new();
 
         // Scan each directory type with appropriate mode
         match Self::scan_directory(&base_path.join("agents"), ScanMode::Flat) {
             Ok(agents) => files.extend(agents),
-            Err(e) => eprintln!("Warning: Failed to scan agents directory: {e}"),
+            Err(e) => warnings.push(format!("Failed to scan agents directory: {e}")),
         }
 
         match Self::scan_directory(&base_path.join("skills"), ScanMode::OneLevel) {
             Ok(skills) => files.extend(skills),
-            Err(e) => eprintln!("Warning: Failed to scan skills directory: {e}"),
+            Err(e) => warnings.push(format!("Failed to scan skills directory: {e}")),
         }
 
         match Self::scan_directory(&base_path.join("commands"), ScanMode::Recursive) {
             Ok(commands) => files.extend(commands),
-            Err(e) => eprintln!("Warning: Failed to scan commands directory: {e}"),
+            Err(e) => warnings.push(format!("Failed to scan commands directory: {e}")),
         }
 
         // Apply filtering and symlink resolution
@@ -91,13 +101,16 @@ impl Scanner {
                         });
                     }
                     Err(e) => {
-                        eprintln!("Warning: {e}");
+                        warnings.push(format!("Symlink resolution failed: {e}"));
                     }
                 }
             }
         }
 
-        Ok(resolved_files)
+        Ok(ScanResult {
+            files: resolved_files,
+            warnings,
+        })
     }
 
     /// Scan a directory with the specified mode
@@ -109,7 +122,7 @@ impl Scanner {
         let paths = match mode {
             ScanMode::Flat => agents::scan(path)?,
             ScanMode::OneLevel => skills::scan(path)?,
-            ScanMode::Recursive => commands::scan(path),
+            ScanMode::Recursive => commands::scan(path)?,
         };
 
         Ok(paths

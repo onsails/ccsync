@@ -7,15 +7,20 @@
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+use crate::error::Result;
+
 /// Scan the commands/ directory recursively for `.md` files
-pub fn scan(base: &Path) -> Vec<PathBuf> {
+///
+/// # Errors
+///
+/// Returns an error if directory traversal fails due to permission issues
+/// or I/O errors.
+pub fn scan(base: &Path) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
-    for entry in WalkDir::new(base)
-        .follow_links(false) // We handle symlinks separately
-        .into_iter()
-        .filter_map(std::result::Result::ok)
-    {
+    for entry in WalkDir::new(base).follow_links(false) {
+        // We handle symlinks separately
+        let entry = entry?; // Propagate errors instead of silently ignoring
         let path = entry.path();
 
         if entry.file_type().is_file() && path.extension().is_some_and(|ext| ext == "md") {
@@ -23,7 +28,7 @@ pub fn scan(base: &Path) -> Vec<PathBuf> {
         }
     }
 
-    files
+    Ok(files)
 }
 
 #[cfg(test)]
@@ -55,7 +60,7 @@ mod tests {
         // Non-md file (should be ignored)
         fs::write(commands_dir.join("ignore.txt"), "ignore").unwrap();
 
-        let files = scan(&commands_dir);
+        let files = scan(&commands_dir).unwrap();
 
         assert_eq!(files.len(), 3);
         assert!(files
@@ -75,7 +80,7 @@ mod tests {
         let commands_dir = tmp.path().join("commands");
         fs::create_dir(&commands_dir).unwrap();
 
-        let files = scan(&commands_dir);
+        let files = scan(&commands_dir).unwrap();
         assert_eq!(files.len(), 0);
     }
 
@@ -98,7 +103,7 @@ mod tests {
         fs::write(subdir.join("command2.md"), "cmd2").unwrap();
         fs::write(subdir.join("script.sh"), "#!/bin/bash").unwrap();
 
-        let files = scan(&commands_dir);
+        let files = scan(&commands_dir).unwrap();
 
         assert_eq!(files.len(), 2);
         assert!(files
