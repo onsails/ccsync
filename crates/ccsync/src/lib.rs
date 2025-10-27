@@ -14,3 +14,6 @@ pub mod error {
     /// Result type alias using `anyhow::Error`
     pub type Result<T> = anyhow::Result<T>;
 }
+
+/// File scanning functionality
+pub mod scanner;
