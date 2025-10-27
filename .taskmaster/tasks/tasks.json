@@ -131,7 +131,7 @@
         "id": 3,
         "title": "File Comparison, Diff Generation, and Conflict Detection",
         "description": "Implement efficient file comparison, diff generation, and robust conflict detection logic.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           2
         ],
@@ -145,7 +145,7 @@
             "description": "Detect file content changes efficiently by computing SHA-256 hashes using the `sha2` crate (v0.10+).",
             "dependencies": [],
             "details": "For each file, read its contents and compute a SHA-256 hash. Compare hashes between source and destination to detect content changes. Handle large and binary files efficiently by streaming file contents. Cache hashes to avoid redundant computation during the same session.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with files of varying sizes and types. Validate hash correctness and performance with large files. Test cache behavior."
           },
           {
@@ -154,7 +154,7 @@
             "description": "Use `std::fs::metadata` to track and compare file modification times for change detection.",
             "dependencies": [],
             "details": "For each file, retrieve the last modification timestamp using `std::fs::metadata`. Compare timestamps between source and destination to determine which file is newer. Handle platform-specific timestamp precision and timezone issues. Cache timestamps to optimize repeated checks.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with files having different modification times. Test timestamp retrieval on various platforms. Validate comparison logic."
           },
           {
@@ -166,7 +166,7 @@
               2
             ],
             "details": "When a file differs in content, generate a unified diff using `similar::TextDiff`. Support line, word, and character-level diffing. Render diffs with ANSI color codes for clarity in terminal output. Integrate diff display in both interactive and non-interactive modes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests with sample file pairs. Validate diff output format and color rendering. Test with non-ASCII and binary files."
           },
           {
@@ -178,7 +178,7 @@
               2
             ],
             "details": "A conflict occurs when both the source and destination files exist and have different content (different hashes). Classify conflicts clearly for user feedback. Support detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.\n<info added on 2025-10-27T15:29:33.154Z>\nA conflict occurs when both the source file AND the destination file exist, but they have different content (different SHA-256 hashes). This is a simple current-state comparison - no sync history tracking is needed.\n\nConflict classification:\n- Source only exists: No conflict (needs copying to destination)\n- Destination only exists: No conflict (source was deleted or never existed)\n- Both exist, same content: No conflict (files are identical, skip)\n- Both exist, different content: CONFLICT (needs resolution strategy)\n\nSupport detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.\n</info added on 2025-10-27T15:29:33.154Z>",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit and integration tests with conflicting file states. Validate conflict detection logic and classification. Test with deleted and renamed files."
           },
           {
@@ -189,7 +189,7 @@
               4
             ],
             "details": "For each conflict, apply the user-specified resolution strategy: fail (abort), overwrite (force sync), skip (ignore), or newer (keep the most recently modified file). Integrate with interactive prompts and non-interactive flags. Ensure strategy application is atomic and logged. Support session-wide 'all' resolution for batch operations.\n<info added on 2025-10-27T15:30:28.673Z>\nDefine an enum for ConflictResolution strategies (Fail, Overwrite, Skip, Newer) and implement logic to determine which strategy to apply based on command-line flags, interactive user prompts, or default behavior. This subtask focuses solely on determining and returning the appropriate conflict resolution strategy, not executing file operations.\n\nThe implementation should:\n1. Create a ConflictResolution enum with variants for Fail, Overwrite, Skip, and Newer\n2. Process CLI flags like --conflict-strategy to determine the user's preferred strategy\n3. If in interactive mode and no strategy is specified via flags, prompt the user to choose a strategy\n4. Support remembering the user's choice for all conflicts in the current session\n5. Implement default behavior when no explicit strategy is provided\n6. Return the determined strategy to the calling code for execution\n\nThis subtask is strictly a decision/analysis step that determines what should be done with conflicts, leaving the actual file operations to task 6 (Bidirectional Synchronization Logic).\n</info added on 2025-10-27T15:30:28.673Z>",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests for each resolution strategy. Validate atomicity and logging. Test with interactive and non-interactive modes."
           }
         ]
@@ -340,7 +340,7 @@
     ],
     "metadata": {
       "created": "2025-10-27T13:09:03.870Z",
-      "updated": "2025-10-27T14:24:51.020Z",
+      "updated": "2025-10-27T15:47:18.195Z",
       "description": "Tasks for master context"
     }
   }

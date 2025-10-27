@@ -47,6 +47,7 @@ pub struct ScanResult {
     /// Successfully scanned files
     pub files: Vec<ScannedFile>,
     /// Non-fatal warnings encountered during scanning
+    #[allow(dead_code)]
     pub warnings: Vec<String>,
 }
 
