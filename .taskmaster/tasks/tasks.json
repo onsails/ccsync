@@ -60,7 +60,7 @@
         "id": 2,
         "title": "File Scanning, Filtering, and Symlink Resolution",
         "description": "Implement scanning of agents/, skills/, and commands/ directories with directory-specific traversal patterns, applying type filters and resolving symlinks.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           1
         ],
@@ -74,7 +74,7 @@
             "description": "Implement directory-specific scanning patterns for agents/, skills/, and commands/ directories, using appropriate traversal methods for each.",
             "dependencies": [],
             "details": "Implement three distinct scanning patterns: 1) For agents/: Use direct iteration (no recursion) to scan only *.md files directly in the agents/ directory. 2) For skills/: Iterate one level of subdirectories and look for SKILL.md in each skill folder. 3) For commands/: Use walkdir::WalkDir for full recursive traversal of commands/**/*.md. Ensure the traversal handles platform-specific path separators correctly using std::path::Path. Integrate with the dirs crate for XDG-compliant path handling where applicable. The implementation should yield file entries for further processing in subsequent subtasks.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests with directory trees containing the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Verify only the target files are found and platform path handling is correct."
           },
           {
@@ -85,7 +85,7 @@
               1
             ],
             "details": "For each file encountered during traversal, apply filters specified via CLI flags and merged config (from Task 5). Filters may include file extensions, names, or other attributes. Skip files that do not match any filter. The filtering logic should be efficient and respect the precedence of CLI over config. Use pattern matching compatible with the ignore crate for complex rules.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit and integration tests with varied filter rules, ensuring correct file selection and precedence handling. Test with both CLI and config-provided filters."
           },
           {
@@ -97,7 +97,7 @@
               2
             ],
             "details": "For each symlink encountered, use std::fs::read_link and std::fs::canonicalize to resolve the target. By default, copy the actual file contents, not the symlink. Detect broken symlinks and emit warnings. Maintain a set of canonicalized paths to detect and prevent symlink loops. If the --preserve-symlinks flag is set, copy symlinks as-is without resolution. Skip all other files and directories as specified.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Integration tests with directory trees containing valid, broken, and looping symlinks. Validate correct resolution, warning output, and loop prevention. Test both default and --preserve-symlinks behavior."
           },
           {
@@ -108,7 +108,7 @@
               1
             ],
             "details": "Use std::path::Path for all path manipulations to ensure correct behavior across operating systems. When resolving user-specific directories (e.g., config files), use the dirs crate to follow XDG conventions. Normalize paths before comparison or storage to avoid issues with different separators or relative paths. Document and test edge cases involving Unicode, junctions, and network paths.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Cross-platform integration tests, including Windows, macOS, and Linux. Test with non-ASCII paths, network shares, and XDG_CONFIG_HOME overrides. Verify path normalization and correct config file location resolution."
           },
           {
@@ -122,7 +122,7 @@
               4
             ],
             "details": "Create test directory trees matching the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Include symlinks (valid, broken, looping), unrelated files, and platform-specific path cases. Automate validation of correct file selection, symlink resolution, warning output, and path handling. Include tests for the --preserve-symlinks flag and config/CLI filter interactions. Ensure tests are reproducible across platforms.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Automated integration test suite with coverage for all subtask features. Include manual inspection of warning and error output. Test on all supported platforms."
           }
         ]
@@ -131,13 +131,13 @@
         "id": 3,
         "title": "File Comparison, Diff Generation, and Conflict Detection",
         "description": "Implement efficient file comparison, diff generation, and robust conflict detection logic.",
-        "details": "Use `sha2` crate (v0.10+) for fast file hashing to detect content changes. Track modification timestamps with `std::fs::metadata`. For diff display, use `similar` crate (v2.x) for color-coded, unified diffs. Detect conflicts when both source and destination have diverged since last sync. Support all conflict resolution strategies: fail, overwrite, skip, newer. Integrate with interactive and non-interactive modes. Ensure atomicity and safety in file operations using `tempfile` for staging writes.",
-        "testStrategy": "Unit and integration tests with files differing in content and timestamps. Validate diff output, conflict detection, and all resolution strategies. Fuzz test with large and binary files.",
-        "priority": "high",
+        "status": "pending",
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "Use `sha2` crate (v0.10+) for fast file hashing to detect content changes. Track modification timestamps with `std::fs::metadata`. For diff display, use `similar` crate (v2.x) for color-coded, unified diffs. Detect conflicts when both source and destination files exist but have different content. Support all conflict resolution strategies: fail, overwrite, skip, newer. Integrate with interactive and non-interactive modes.",
+        "testStrategy": "Unit and integration tests with files differing in content and timestamps. Validate diff output, conflict detection, and all resolution strategies. Fuzz test with large and binary files.",
         "subtasks": [
           {
             "id": 1,
@@ -153,7 +153,7 @@
             "title": "Track and Compare File Modification Timestamps",
             "description": "Use `std::fs::metadata` to track and compare file modification times for change detection.",
             "dependencies": [],
-            "details": "For each file, retrieve the last modification timestamp using `std::fs::metadata`. Compare timestamps between source and destination to detect external modifications. Handle platform-specific timestamp precision and timezone issues. Cache timestamps to optimize repeated checks.",
+            "details": "For each file, retrieve the last modification timestamp using `std::fs::metadata`. Compare timestamps between source and destination to determine which file is newer. Handle platform-specific timestamp precision and timezone issues. Cache timestamps to optimize repeated checks.",
             "status": "pending",
             "testStrategy": "Unit tests with files having different modification times. Test timestamp retrieval on various platforms. Validate comparison logic."
           },
@@ -165,19 +165,19 @@
               1,
               2
             ],
-            "details": "When a file differs in content, generate a unified diff using `similar::TextDiff`. Support line, word, and character-level diffing. Render diffs with ANSI color codes for clarity in terminal output. Integrate diff display in both interactive and non-interactive modes[2].",
+            "details": "When a file differs in content, generate a unified diff using `similar::TextDiff`. Support line, word, and character-level diffing. Render diffs with ANSI color codes for clarity in terminal output. Integrate diff display in both interactive and non-interactive modes.",
             "status": "pending",
             "testStrategy": "Integration tests with sample file pairs. Validate diff output format and color rendering. Test with non-ASCII and binary files."
           },
           {
             "id": 4,
             "title": "Detect and Classify File Synchronization Conflicts",
-            "description": "Identify conflicts when both source and destination files have diverged since the last sync.",
+            "description": "Identify conflicts when both source and destination files exist but have different content.",
             "dependencies": [
               1,
               2
             ],
-            "details": "A conflict occurs when both the source and destination files have changed (different hashes and newer timestamps than the last sync). Classify conflicts clearly for user feedback. Support detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.",
+            "details": "A conflict occurs when both the source and destination files exist and have different content (different hashes). Classify conflicts clearly for user feedback. Support detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.\n<info added on 2025-10-27T15:29:33.154Z>\nA conflict occurs when both the source file AND the destination file exist, but they have different content (different SHA-256 hashes). This is a simple current-state comparison - no sync history tracking is needed.\n\nConflict classification:\n- Source only exists: No conflict (needs copying to destination)\n- Destination only exists: No conflict (source was deleted or never existed)\n- Both exist, same content: No conflict (files are identical, skip)\n- Both exist, different content: CONFLICT (needs resolution strategy)\n\nSupport detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.\n</info added on 2025-10-27T15:29:33.154Z>",
             "status": "pending",
             "testStrategy": "Unit and integration tests with conflicting file states. Validate conflict detection logic and classification. Test with deleted and renamed files."
           },
@@ -188,20 +188,9 @@
             "dependencies": [
               4
             ],
-            "details": "For each conflict, apply the user-specified resolution strategy: fail (abort), overwrite (force sync), skip (ignore), or newer (keep the most recently modified file). Integrate with interactive prompts and non-interactive flags. Ensure strategy application is atomic and logged. Support session-wide 'all' resolution for batch operations.",
+            "details": "For each conflict, apply the user-specified resolution strategy: fail (abort), overwrite (force sync), skip (ignore), or newer (keep the most recently modified file). Integrate with interactive prompts and non-interactive flags. Ensure strategy application is atomic and logged. Support session-wide 'all' resolution for batch operations.\n<info added on 2025-10-27T15:30:28.673Z>\nDefine an enum for ConflictResolution strategies (Fail, Overwrite, Skip, Newer) and implement logic to determine which strategy to apply based on command-line flags, interactive user prompts, or default behavior. This subtask focuses solely on determining and returning the appropriate conflict resolution strategy, not executing file operations.\n\nThe implementation should:\n1. Create a ConflictResolution enum with variants for Fail, Overwrite, Skip, and Newer\n2. Process CLI flags like --conflict-strategy to determine the user's preferred strategy\n3. If in interactive mode and no strategy is specified via flags, prompt the user to choose a strategy\n4. Support remembering the user's choice for all conflicts in the current session\n5. Implement default behavior when no explicit strategy is provided\n6. Return the determined strategy to the calling code for execution\n\nThis subtask is strictly a decision/analysis step that determines what should be done with conflicts, leaving the actual file operations to task 6 (Bidirectional Synchronization Logic).\n</info added on 2025-10-27T15:30:28.673Z>",
             "status": "pending",
             "testStrategy": "Integration tests for each resolution strategy. Validate atomicity and logging. Test with interactive and non-interactive modes."
-          },
-          {
-            "id": 6,
-            "title": "Ensure Atomic and Safe File Operations with `tempfile`",
-            "description": "Guarantee atomicity and safety during file writes by staging changes with `tempfile`.",
-            "dependencies": [
-              5
-            ],
-            "details": "Use the `tempfile` crate to create temporary files for staging writes. Only move (rename) the temporary file to the final destination after successful write, ensuring atomicity. Handle filesystem errors gracefully and clean up temp files on failure. Preserve file permissions and metadata during the operation. Support both interactive and non-interactive modes.",
-            "status": "pending",
-            "testStrategy": "Integration tests simulating write failures. Validate atomicity, cleanup, and metadata preservation. Test with large and binary files."
           }
         ]
       },
@@ -301,7 +290,20 @@
           5
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Ensure Atomic and Safe File Operations with `tempfile`",
+            "description": "Guarantee atomicity and safety during file writes by staging changes with `tempfile`.",
+            "status": "pending",
+            "dependencies": [
+              5,
+              3
+            ],
+            "details": "Use the `tempfile` crate to create temporary files for staging writes. Only move (rename) the temporary file to the final destination after successful write, ensuring atomicity. Handle filesystem errors gracefully and clean up temp files on failure. Preserve file permissions and metadata during the operation. Support both interactive and non-interactive modes.",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 7,
@@ -338,7 +340,7 @@
     ],
     "metadata": {
       "created": "2025-10-27T13:09:03.870Z",
-      "updated": "2025-10-27T13:15:24.210Z",
+      "updated": "2025-10-27T14:24:51.020Z",
       "description": "Tasks for master context"
     }
   }
