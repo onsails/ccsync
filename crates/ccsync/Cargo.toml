@@ -1,0 +1,16 @@
+[package]
+name = "ccsync"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core library for Claude Configuration Synchronization"
+keywords = ["sync", "configuration", "claude"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+anyhow.workspace = true
+
+[lints]
+workspace = true
