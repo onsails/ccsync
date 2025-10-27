@@ -16,4 +16,5 @@ pub mod error {
 }
 
 /// File scanning functionality
-pub mod scanner;
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) mod scanner;

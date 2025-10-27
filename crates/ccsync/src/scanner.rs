@@ -11,10 +11,13 @@ mod filters;
 mod skills;
 mod symlinks;
 
+#[cfg(test)]
+mod integration_tests;
+
 use std::path::{Path, PathBuf};
 
 pub use filters::FileFilter;
-pub use symlinks::{ResolvedPath, SymlinkResolver};
+use symlinks::SymlinkResolver;
 
 use crate::error::Result;
 
@@ -64,12 +67,8 @@ impl Scanner {
     }
 
     /// Scan a base directory for Claude Code configuration files
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if directory traversal fails or if there are
-    /// permission issues reading directories.
-    pub fn scan(&self, base_path: &Path) -> Result<ScanResult> {
+    #[must_use]
+    pub fn scan(&self, base_path: &Path) -> ScanResult {
         let mut files = Vec::new();
         let mut warnings = Vec::new();
 
@@ -107,10 +106,10 @@ impl Scanner {
             }
         }
 
-        Ok(ScanResult {
+        ScanResult {
             files: resolved_files,
             warnings,
-        })
+        }
     }
 
     /// Scan a directory with the specified mode

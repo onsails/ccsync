@@ -3,7 +3,7 @@
 use std::fs;
 use tempfile::TempDir;
 
-use ccsync::scanner::{FileFilter, Scanner};
+use super::{FileFilter, Scanner};
 
 #[test]
 fn test_full_scan_all_directory_types() {
@@ -41,7 +41,7 @@ fn test_full_scan_all_directory_types() {
     // Run scanner
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, false);
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     // Should find: 2 agents, 2 skills, 2 commands = 6 total
     assert_eq!(result.files.len(), 6);
@@ -71,7 +71,7 @@ fn test_scan_missing_directories() {
 
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, false);
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     // Should only find the one agent file
     assert_eq!(result.files.len(), 1);
@@ -89,7 +89,7 @@ fn test_scan_empty_directories() {
 
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, false);
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     assert_eq!(result.files.len(), 0);
 }
@@ -114,7 +114,7 @@ fn test_scan_with_symlinks() {
 
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, false);
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     // Should resolve both files
     assert_eq!(result.files.len(), 2);
@@ -139,7 +139,7 @@ fn test_scan_with_broken_symlink() {
 
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, false);
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     // Should find only the good file (broken symlink should be skipped with warning)
     assert_eq!(result.files.len(), 1);
@@ -165,7 +165,7 @@ fn test_scan_preserve_symlinks() {
 
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, true); // preserve_symlinks = true
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     // Both should be found, link preserved as-is
     assert_eq!(result.files.len(), 2);
@@ -187,7 +187,7 @@ fn test_scan_cross_platform_paths() {
 
     let filter = FileFilter::new();
     let scanner = Scanner::new(filter, false);
-    let result = scanner.scan(tmp.path()).unwrap();
+    let result = scanner.scan(tmp.path());
 
     assert_eq!(result.files.len(), 2);
 }
