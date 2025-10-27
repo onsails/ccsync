@@ -7,6 +7,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "ccsync")]
 #[command(about, long_about = None, version)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Cli {
     /// Enable verbose output
     #[arg(short, long, global = true)]
