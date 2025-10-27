@@ -20,7 +20,7 @@ impl ConfigValidator {
     /// Returns an error if the configuration is invalid.
     pub fn validate( config: &Config) -> Result<()> {
         // Check for conflicting settings
-        if config.follow_symlinks && config.preserve_symlinks {
+        if config.follow_symlinks == Some(true) && config.preserve_symlinks == Some(true) {
             anyhow::bail!(
                 "Conflicting configuration: both follow_symlinks and preserve_symlinks are enabled"
             );
@@ -72,8 +72,8 @@ mod tests {
     #[test]
     fn test_validate_conflicting_symlink_settings() {
         let mut config = Config::default();
-        config.follow_symlinks = true;
-        config.preserve_symlinks = true;
+        config.follow_symlinks = Some(true);
+        config.preserve_symlinks = Some(true);
 
         let _validator = ConfigValidator::new();
         let result = ConfigValidator::validate(&config);
@@ -119,8 +119,8 @@ mod tests {
         let mut config = Config::default();
         config.ignore.push("*.tmp".to_string());
         config.include.push("important.tmp".to_string());
-        config.follow_symlinks = false;
-        config.preserve_symlinks = false;
+        config.follow_symlinks = Some(false);
+        config.preserve_symlinks = Some(false);
 
         let _validator = ConfigValidator::new();
         assert!(ConfigValidator::validate(&config).is_ok());

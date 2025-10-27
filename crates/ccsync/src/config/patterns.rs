@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+use anyhow::Context;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 
 use crate::error::Result;
@@ -28,12 +29,16 @@ impl PatternMatcher {
 
         // Add ignore patterns
         for pattern in ignore_patterns {
-            builder.add_line(None, pattern)?;
+            builder
+                .add_line(None, pattern)
+                .with_context(|| format!("Invalid ignore pattern: '{pattern}'"))?;
         }
 
         // Add include patterns (negated ignores)
         for pattern in include_patterns {
-            builder.add_line(None, &format!("!{pattern}"))?;
+            builder
+                .add_line(None, &format!("!{pattern}"))
+                .with_context(|| format!("Invalid include pattern: '{pattern}'"))?;
         }
 
         let gitignore = builder.build()?;

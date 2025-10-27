@@ -35,7 +35,7 @@ include = true
 
     assert_eq!(config.ignore.len(), 2);
     assert_eq!(config.include.len(), 1);
-    assert!(!config.follow_symlinks);
+    assert!(config.follow_symlinks != Some(true));
     assert_eq!(config.rules.len(), 1);
     assert_eq!(config.rules[0].direction, Some(SyncDirection::ToLocal));
 }
@@ -69,10 +69,10 @@ fn test_config_with_rules() {
     let config = Config {
         ignore: vec!["*.tmp".to_string()],
         include: vec![],
-        follow_symlinks: false,
-        preserve_symlinks: false,
-        dry_run: false,
-        non_interactive: false,
+        follow_symlinks: Some(false),
+        preserve_symlinks: Some(false),
+        dry_run: Some(false),
+        non_interactive: Some(false),
         rules: vec![
             SyncRule {
                 patterns: vec!["agents/*.md".to_string()],

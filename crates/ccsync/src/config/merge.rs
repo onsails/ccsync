@@ -3,16 +3,17 @@
 //! # Merging Semantics
 //!
 //! - **Arrays** (ignore, include, rules): Additive - all values from all configs are combined
-//! - **Booleans**: OR semantics - if any config sets to `true`, result is `true`
+//! - **Booleans**: Override - higher precedence configs override lower precedence
 //!
-//! ## Boolean OR Semantics
+//! # Precedence Order
 //!
-//! The boolean fields use OR semantics for safety. This means:
-//! - A lower-precedence config that enables a feature cannot be disabled by higher-precedence configs
-//! - Example: If global config has `follow_symlinks = true`, project config setting it to `false` won't disable it
-//! - Rationale: Explicit enablement in any config file should be honored (explicit > implicit)
+//! Configs are loaded from lowest to highest precedence:
+//! 1. Global config (~/.config/ccsync/config.toml)
+//! 2. Project config (.ccsync)
+//! 3. Local config (.ccsync.local)
+//! 4. CLI config (--config flag)
 //!
-//! If you need true override semantics, use `Option<bool>` in TOML with `Some(true)` vs `Some(false)` vs `None`.
+//! Higher precedence configs fully override boolean values from lower precedence configs.
 
 use std::fs;
 use std::path::Path;
@@ -75,18 +76,24 @@ impl ConfigMerger {
         let config: Config = toml::from_str(&content)
             .with_context(|| format!("Failed to parse config file: {}", path.display()))?;
 
-        // Merge: additive for arrays, OR semantics for booleans
+        // Merge: additive for arrays, override for Option<bool>
         base.ignore.extend(config.ignore);
         base.include.extend(config.include);
         base.rules.extend(config.rules);
 
-        // Boolean flags use OR semantics: if any config sets to true, it's true
-        // This means lower-precedence configs can enable features that higher-precedence
-        // configs cannot disable. This is intentional for safety (explicit > implicit).
-        base.follow_symlinks |= config.follow_symlinks;
-        base.preserve_symlinks |= config.preserve_symlinks;
-        base.dry_run |= config.dry_run;
-        base.non_interactive |= config.non_interactive;
+        // Override booleans only if explicitly set in higher-precedence config
+        if config.follow_symlinks.is_some() {
+            base.follow_symlinks = config.follow_symlinks;
+        }
+        if config.preserve_symlinks.is_some() {
+            base.preserve_symlinks = config.preserve_symlinks;
+        }
+        if config.dry_run.is_some() {
+            base.dry_run = config.dry_run;
+        }
+        if config.non_interactive.is_some() {
+            base.non_interactive = config.non_interactive;
+        }
 
         Ok(())
     }
@@ -138,7 +145,7 @@ follow_symlinks = true
         let config = ConfigMerger::merge(&files).unwrap();
 
         assert_eq!(config.ignore.len(), 2);
-        assert!(config.follow_symlinks);
+        assert_eq!(config.follow_symlinks, Some(true));
     }
 
     #[test]
@@ -188,6 +195,6 @@ follow_symlinks = true
         let config = ConfigMerger::merge(&files).unwrap();
 
         // Project config should override global
-        assert!(config.follow_symlinks);
+        assert_eq!(config.follow_symlinks, Some(true));
     }
 }

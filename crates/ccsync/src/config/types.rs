@@ -58,20 +58,20 @@ pub struct Config {
     pub include: Vec<String>,
 
     /// Follow symlinks
-    #[serde(default)]
-    pub follow_symlinks: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub follow_symlinks: Option<bool>,
 
     /// Preserve symlinks instead of resolving them
-    #[serde(default)]
-    pub preserve_symlinks: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preserve_symlinks: Option<bool>,
 
     /// Dry run mode (don't actually sync)
-    #[serde(default)]
-    pub dry_run: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dry_run: Option<bool>,
 
     /// Non-interactive mode (no prompts)
-    #[serde(default)]
-    pub non_interactive: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub non_interactive: Option<bool>,
 
     /// Advanced sync rules (direction and type-specific)
     #[serde(default)]
@@ -88,8 +88,8 @@ mod tests {
         let config = Config::default();
         assert!(config.ignore.is_empty());
         assert!(config.include.is_empty());
-        assert!(!config.follow_symlinks);
-        assert!(!config.preserve_symlinks);
+        assert!(config.follow_symlinks != Some(true));
+        assert!(config.preserve_symlinks != Some(true));
     }
 
     #[test]

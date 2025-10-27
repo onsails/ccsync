@@ -29,6 +29,7 @@ impl ConfigDiscovery {
     /// Discover all available configuration files
     ///
     /// Returns a `ConfigFiles` struct with paths to discovered configs.
+    #[must_use]
     pub fn discover(cli_path: Option<&Path>) -> ConfigFiles {
         let cli = cli_path.and_then(|p| {
             if p.exists() {
@@ -112,10 +113,10 @@ mod tests {
     #[test]
     fn test_discover_cli_config_nonexistent() {
         let tmp = TempDir::new().unwrap();
-        let _cli_config = tmp.path().join("nonexistent.toml");
+        let cli_config = tmp.path().join("nonexistent.toml");
 
         let _discovery = ConfigDiscovery::new();
-        let files = ConfigDiscovery::discover(None);
+        let files = ConfigDiscovery::discover(Some(&cli_config));
 
         // Nonexistent CLI config should be None (not an error)
         assert!(files.cli.is_none());
