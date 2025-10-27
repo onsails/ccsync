@@ -59,6 +59,7 @@ jobs:
             Also run review-rust-code agent to get additional insights on Rust code.
 
             Avoid suggesting changes that would conflict with existing non-done taskmaster tasks which are our of scope of this PR.
+            ultrathink
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
