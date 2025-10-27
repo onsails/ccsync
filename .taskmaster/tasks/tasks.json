@@ -59,23 +59,23 @@
       {
         "id": 2,
         "title": "File Scanning, Filtering, and Symlink Resolution",
-        "description": "Implement recursive scanning of agents/, skills/, and commands/ directories, applying type filters and resolving symlinks.",
-        "details": "Use `walkdir` crate (v2.x) for efficient recursive directory traversal. Filter only agents/, skills/, and commands/ directories. Apply type filters from CLI and config. Use `std::fs::read_link` and `std::fs::canonicalize` to resolve symlinks and copy actual file contents by default. Detect and warn on broken symlinks. Implement symlink loop detection using a set of canonicalized paths. Support `--preserve-symlinks` flag to optionally copy symlinks as-is. Ignore all other files/directories. Ensure cross-platform path handling using `std::path::Path` and `dirs` crate for XDG compliance.",
-        "testStrategy": "Integration tests with sample directory trees containing regular files, symlinks, and broken symlinks. Validate correct file selection, symlink resolution, and error/warning output.",
-        "priority": "high",
+        "description": "Implement scanning of agents/, skills/, and commands/ directories with directory-specific traversal patterns, applying type filters and resolving symlinks.",
+        "status": "pending",
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "Implement directory-specific scanning patterns: agents/ (flat, *.md files only), skills/ (one level deep, SKILL.md pattern), and commands/ (full recursion with walkdir). Use `walkdir` crate (v2.x) for recursive directory traversal where needed. Apply type filters from CLI and config. Use `std::fs::read_link` and `std::fs::canonicalize` to resolve symlinks and copy actual file contents by default. Detect and warn on broken symlinks. Implement symlink loop detection using a set of canonicalized paths. Support `--preserve-symlinks` flag to optionally copy symlinks as-is. Ignore all other files/directories. Ensure cross-platform path handling using `std::path::Path` and `dirs` crate for XDG compliance.",
+        "testStrategy": "Integration tests with sample directory structures matching the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Test with regular files, symlinks, and broken symlinks. Validate correct file selection, symlink resolution, and error/warning output.",
         "subtasks": [
           {
             "id": 1,
             "title": "Recursive Directory Traversal with walkdir",
-            "description": "Implement recursive scanning of agents/, skills/, and commands/ directories using the walkdir crate, ensuring efficient and cross-platform traversal.",
+            "description": "Implement directory-specific scanning patterns for agents/, skills/, and commands/ directories, using appropriate traversal methods for each.",
             "dependencies": [],
-            "details": "Use walkdir::WalkDir to recursively traverse the specified directories. Configure the iterator to skip all other directories and files not matching agents/, skills/, or commands/. Ensure the traversal is depth-first and handles platform-specific path separators correctly using std::path::Path. Integrate with the dirs crate for XDG-compliant path handling where applicable. The implementation should yield DirEntry objects for further processing in subsequent subtasks.",
+            "details": "Implement three distinct scanning patterns: 1) For agents/: Use direct iteration (no recursion) to scan only *.md files directly in the agents/ directory. 2) For skills/: Iterate one level of subdirectories and look for SKILL.md in each skill folder. 3) For commands/: Use walkdir::WalkDir for full recursive traversal of commands/**/*.md. Ensure the traversal handles platform-specific path separators correctly using std::path::Path. Integrate with the dirs crate for XDG-compliant path handling where applicable. The implementation should yield file entries for further processing in subsequent subtasks.",
             "status": "pending",
-            "testStrategy": "Integration tests with directory trees containing nested agents/, skills/, and commands/ folders, mixed with unrelated files and directories. Verify only the target directories are traversed and platform path handling is correct."
+            "testStrategy": "Integration tests with directory trees containing the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Verify only the target files are found and platform path handling is correct."
           },
           {
             "id": 2,
@@ -121,7 +121,7 @@
               3,
               4
             ],
-            "details": "Create test directory trees with nested agents/, skills/, and commands/ folders, mixed with symlinks (valid, broken, looping), unrelated files, and platform-specific path cases. Automate validation of correct file selection, symlink resolution, warning output, and path handling. Include tests for the --preserve-symlinks flag and config/CLI filter interactions. Ensure tests are reproducible across platforms.",
+            "details": "Create test directory trees matching the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Include symlinks (valid, broken, looping), unrelated files, and platform-specific path cases. Automate validation of correct file selection, symlink resolution, warning output, and path handling. Include tests for the --preserve-symlinks flag and config/CLI filter interactions. Ensure tests are reproducible across platforms.",
             "status": "pending",
             "testStrategy": "Automated integration test suite with coverage for all subtask features. Include manual inspection of warning and error output. Test on all supported platforms."
           }
