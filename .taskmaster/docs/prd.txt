@@ -1,0 +1,508 @@
+# ccsync - Claude Configuration Synchronization Tool
+
+<context>
+ccsync is a simple, focused Rust-based command-line utility for synchronizing exactly three types of Claude configuration files - agents (subagents), skills, and commands - between the global user directory (~/.claude) and project-specific directories (.claude). 
+
+The tool addresses the challenge of maintaining consistent Claude agent, skill, and command configurations across multiple projects and team members while preventing accidental data loss through intelligent conflict detection. It deliberately focuses only on these three essential configuration types, ignoring all other files and directories.
+
+Key capabilities include:
+- Bidirectional sync of agents, skills, and commands ONLY
+- Automatic detection of file differences before copying
+- Conflict detection when files have been modified in both locations
+- Interactive item-by-item confirmation by default
+- Configuration file support for ignore patterns and sync rules
+- Type-based filtering (sync only commands, only skills, or only agents)
+- Symlink resolution to copy actual content
+- Cross-platform compatibility (Linux, macOS, Windows)
+</context>
+
+<objectives>
+## Primary Goals
+
+1. **Focused Configuration Synchronization**
+   - Simple tool that syncs ONLY agents, skills, and commands - nothing else
+   - Copy configurations only when actual differences exist
+   - Interactive confirmation for each item by default
+   - Detect conflicts when both source and destination have been modified
+   - Resolve symlinks and copy actual file contents
+
+2. **Team Collaboration**
+   - Enable sharing of agent, skill, and command configurations with project collaborators
+   - Support configuration files for consistent team workflows
+   - Allow fine-grained control over which agents/skills/commands get synced
+   - Maintain project-specific and personal configurations separately
+
+3. **Developer Workflow Integration**
+   - Interactive mode by default for safety
+   - Support automation with --non-interactive flag for CI/CD
+   - Provide dry-run mode for risk-free preview
+   - Clear, actionable output with color-coded diffs
+   - Flexible configuration through multiple config file locations
+
+4. **Transparency and Control**
+   - Always show comprehensive diff before modifications
+   - Item-by-item confirmation in interactive mode
+   - Report detailed statistics after operations
+   - Provide inspection commands without modifying files
+
+## Success Metrics
+
+- Zero data loss incidents from unintended overwrites
+- Sub-2 second operation time for typical configs (10-50 agent/skill/command files)
+- 100% conflict detection accuracy before file modifications
+- Successful adoption by development teams
+- Cross-platform compatibility verification
+</objectives>
+
+<user_stories>
+## Core Functionality
+
+**US-001: Share Configurations with Team**
+As a developer working on a team project, I want to sync my global Claude agents, skills, and commands to the project directory so I can share them with other project collaborators.
+
+*Acceptance Criteria:*
+- Copies agents, skills, and commands from ~/.claude to ./.claude using `ccsync to-local`
+- Only syncs these three types of files, ignores everything else
+- Only copies files that differ or don't exist
+- Shows diff preview before copying
+- Interactive mode asks for confirmation for each item
+- Fails safely if conflicts detected (default behavior)
+
+**US-002: Extract Project Configurations**  
+As a developer who created useful project-specific agents, skills, or commands, I want to copy them to my global setup to use in other projects.
+
+*Acceptance Criteria:*
+- Copies agents, skills, and commands from ./.claude to ~/.claude using `ccsync to-global`
+- Only syncs these three types of files
+- Detects and handles conflicts based on --conflict flag
+- Shows clear indication of what will be overwritten
+- Interactive confirmation for each item by default
+- Preserves directory structure within agents/, skills/, and commands/ folders
+
+**US-003: Conflict Detection**
+As a developer, I want the tool to detect when files have been modified in both locations to prevent losing important changes.
+
+*Acceptance Criteria:*
+- Identifies files that differ in both source and destination
+- Default behavior in interactive mode prompts for resolution
+- In non-interactive mode, exits with error listing conflicts
+- Shows diffs of conflicting files
+- Supports multiple resolution strategies
+
+**US-004: Symlink Resolution**
+As a developer, I want the tool to copy actual file contents when encountering symlinks rather than copying the symlink itself.
+
+*Acceptance Criteria:*
+- Detects symbolic links during scanning
+- Follows symlinks to read actual content
+- Copies file content, not the symlink
+- Handles broken symlinks gracefully with warnings
+- Optional flag to preserve symlinks if needed
+
+**US-005: Type-Based Synchronization**
+As a developer, I want to sync only specific types (only commands, only skills, or only agents).
+
+*Acceptance Criteria:*
+- Support --type flag with values: commands, skills, agents, all
+- Can specify multiple types: --type commands --type skills
+- Filters apply to both scanning and copying
+- Works with all other options (dry-run, conflicts, etc.)
+- Clear indication of active filters in output
+
+## Interactive Mode and Automation
+
+**US-006: Interactive Item Confirmation**
+As a developer, I want to confirm each item individually before copying to maintain full control.
+
+*Acceptance Criteria:*
+- Default mode is interactive
+- Shows diff for each item before prompting
+- Options: yes, no, all, none, diff, quit
+- Remembers "all" choice for remaining items
+- Can switch to non-interactive with flag
+
+**US-007: Non-Interactive Mode**
+As a DevOps engineer, I want to run the tool in scripts without interaction.
+
+*Acceptance Criteria:*
+- --non-interactive flag skips all prompts
+- Returns appropriate exit codes for scripting
+- Still respects conflict mode settings
+- Logs all operations performed
+- Works with CI/CD pipelines
+
+**US-008: Dry Run Preview**
+As a cautious user, I want to preview all changes before they happen to verify safety.
+
+*Acceptance Criteria:*
+- --dry-run shows all planned changes without modifications
+- Works in both interactive and non-interactive modes
+- Identifies conflicts in preview
+- Shows what config files would affect
+- Clearly marks output as preview/simulation
+
+## Configuration Files
+
+**US-009: Global Ignore Configuration**
+As a developer, I want to configure which agents, skills, or commands should never be synced globally across all projects.
+
+*Acceptance Criteria:*
+- Reads from $XDG_CONFIG_HOME/ccsync/config (or ~/.config/ccsync/config)
+- Supports patterns for agents/skills/commands to ignore
+- Supports direction-specific rules (to-local vs to-global)
+- Clear precedence rules when multiple configs exist
+
+**US-010: Project-Specific Configuration**
+As a team lead, I want to configure project-specific sync rules for agents, skills, and commands that apply to all team members.
+
+*Acceptance Criteria:*
+- Reads from project .ccsync file
+- Allows specifying which agents/skills/commands are required or ignored
+- Can override or extend global configuration
+- Version controlled with project
+
+**US-011: Local Override Configuration**
+As a developer, I want personal overrides that don't affect the team configuration.
+
+*Acceptance Criteria:*
+- Reads from project .ccsync.local file
+- Takes precedence over .ccsync but not command-line flags
+- Not version controlled (in .gitignore)
+- Allows personal workflow customizations
+
+**US-012: Configuration Merging**
+As a developer, I want multiple config files to be merged intelligently with clear precedence.
+
+*Acceptance Criteria:*
+- Precedence order: CLI flags > .ccsync.local > .ccsync > XDG_CONFIG_HOME
+- Additive for ignore patterns
+- Override for boolean settings
+- Clear debugging output with --verbose
+
+**US-013: Ignore Everything Except**
+As a developer, I want to sync only specific agents/skills/commands while ignoring everything else.
+
+*Acceptance Criteria:*
+- Support "ignore all except" patterns for agents, skills, and commands
+- Can specify exceptions by path, pattern, or type
+- Works for both sync directions independently
+- Clear syntax in config file
+
+**US-014: Selective Directory Sync**
+As a developer, I want to sync entire agent/skill/command directories except specific files within them.
+
+*Acceptance Criteria:*
+- Support nested ignore patterns within agents/, skills/, commands/ directories
+- Can exclude specific files by pattern within included directories
+- Supports wildcards and glob patterns
+- Direction-specific rules
+
+**US-015: Type-Based Configuration**
+As a team, we want to configure which of the three types (agents, skills, commands) should sync by default.
+
+*Acceptance Criteria:*
+- Configure default types (agents/skills/commands) in config file
+- Can be overridden by CLI flags
+- Different defaults for different directions
+- Only these three types are supported
+
+## Inspection Commands
+
+**US-016: Status Check**
+As a developer, I want to see sync status of agents, skills, and commands without making changes.
+
+*Acceptance Criteria:*
+- `ccsync status` shows current differences for agents/, skills/, commands/
+- Identifies any conflicts
+- Shows effect of config files
+- No file modifications
+- Summary statistics by type
+
+**US-017: Diff Viewing**
+As a developer, I want to see detailed differences between agent, skill, and command configurations.
+
+*Acceptance Criteria:*
+- `ccsync diff` shows full file diffs for agents/, skills/, commands/
+- Respects config file filters
+- Color-coded output for clarity
+- Highlights conflicts distinctly
+- Read-only operation
+
+**US-018: Config Debugging**
+As a developer, I want to understand what configuration is active for syncing agents, skills, and commands.
+
+*Acceptance Criteria:*
+- `ccsync config` shows merged configuration
+- Shows source of each setting
+- Validates config file syntax
+- Explains ignore patterns with examples from actual agents/skills/commands
+- Tests patterns against actual files in the three directories
+</user_stories>
+
+<requirements>
+## Functional Requirements
+
+### Commands
+
+**Primary Commands:**
+- `ccsync to-local`: Sync from ~/.claude to ./.claude
+- `ccsync to-global`: Sync from ./.claude to ~/.claude
+- `ccsync status`: Show sync status without changes
+- `ccsync diff`: Display detailed differences
+- `ccsync config`: Show active configuration and debug settings
+
+### Command Options
+
+**Interaction Modes:**
+- Default: Interactive mode with item-by-item confirmation
+- `--non-interactive`: Skip all prompts for automation
+- `--yes-all`: Accept all items in interactive mode
+- `--dry-run`: Preview without executing
+
+**Type Filtering:**
+- `--type <TYPE>`: Filter by type (commands, skills, agents, all)
+- Multiple --type flags supported for combining types
+- Configured defaults in config files
+- Only these three types are supported - nothing else in .claude directories is synced
+
+**Conflict Handling:**
+- Interactive mode: Prompt for each conflict
+- `--conflict <MODE>`: Non-interactive conflict strategy
+  - `fail`: Exit on conflicts
+  - `overwrite`: Proceed with warning
+  - `skip`: Skip conflicting files
+  - `newer`: Keep newer file (by modification time)
+
+**Configuration:**
+- `--verbose`: Detailed logging including config processing
+- `--global-path <PATH>`: Override ~/.claude
+- `--local-path <PATH>`: Override ./.claude
+- `--config <PATH>`: Use specific config file
+- `--no-config`: Ignore all config files
+
+**Symlink Handling:**
+- Default: Follow symlinks and copy content
+- `--preserve-symlinks`: Copy symlinks as symlinks
+
+### File Operations
+
+**Scanning & Detection:**
+- Recursively scan .claude/agents, .claude/skills, and .claude/commands directories only
+- Follow and resolve symbolic links by default
+- Ignore any other directories or files in .claude
+- Apply config file filters during scan
+- Calculate file hashes for comparison
+- Track modification timestamps
+
+**Interactive Operations:**
+- Show item-by-item diff
+- Prompt for each item: [y]es, [n]o, [a]ll, [N]one, [d]iff, [q]uit
+- Remember user choices for session
+- Clear progress indication
+- Allow mid-operation cancellation
+
+**Configuration File Processing:**
+- Load from multiple locations in precedence order
+- Merge configurations intelligently
+- Support ignore patterns (gitignore syntax)
+- Direction-specific rules
+- Type-specific defaults
+- Include/exclude patterns
+
+### Configuration File Features
+
+**File Locations (in precedence order):**
+1. Command-line flags (highest)
+2. .ccsync.local (project directory)
+3. .ccsync (project directory)  
+4. $XDG_CONFIG_HOME/ccsync/config or ~/.config/ccsync/config (lowest)
+
+**Configuration Capabilities:**
+- Ignore patterns for agents, skills, and commands (gitignore syntax)
+- Include patterns (when using ignore-all-except mode)
+- Direction-specific rules (to-local vs to-global)
+- Type filtering defaults (agents, skills, commands, or all)
+- Conflict resolution defaults
+- Interactive mode preferences
+
+**Pattern Examples (format TBD):**
+- Ignore all agents except specific ones
+- Ignore specific skills in all projects
+- Different rules for agents vs skills vs commands
+- Type-based filtering (e.g., only sync commands)
+- Wildcard and glob support within the three directories
+
+### Output Requirements
+
+**User Interface:**
+- Color-coded diff display
+- Interactive prompts with clear options
+- Progress bar for multi-file operations
+- Summary statistics after operation (X agents copied, Y skills copied, Z commands copied)
+- Config file effects clearly indicated
+
+**Exit Codes:**
+- 0: Success
+- 1: General error
+- 2: Conflicts detected
+- 3: No changes needed
+- 4: User cancelled
+- 5: Configuration error
+
+## Non-Functional Requirements
+
+### Performance
+- Complete typical sync (10-50 agent/skill/command files) in under 2 seconds
+- Efficient config file parsing and merging
+- Minimal memory footprint
+- Responsive interactive mode
+
+### Reliability
+- Atomic file operations
+- Graceful handling of permission errors
+- Symlink loop detection
+- Clear error messages
+
+### Compatibility
+- Support Linux, macOS, and Windows
+- Handle platform-specific path conventions
+- XDG Base Directory compliance
+- Work with various terminal emulators
+
+### Usability
+- Simple, focused tool with clear purpose
+- Intuitive command names
+- Helpful --help documentation
+- Clear config file examples
+- Safe defaults (interactive, fail on conflicts)
+- Progressive disclosure of complexity
+- No feature creep - stays focused on agents/skills/commands only
+</requirements>
+
+<milestones>
+## Development Phases
+
+### Phase 1: Core MVP
+**Goal:** Basic bidirectional sync with interactive mode
+
+**Deliverables:**
+- Project setup and structure
+- File scanning for agents/, skills/, and commands/ directories only
+- Symlink resolution
+- Basic diff display
+- to-local and to-global commands
+- Interactive item-by-item confirmation
+- Basic conflict detection
+
+**Success Criteria:**
+- Interactive mode works as default
+- Only scans and syncs agents, skills, and commands
+- Symlinks resolved correctly
+- Both directions functional
+
+### Phase 2: Type Filtering & Automation
+**Goal:** Add type-based filtering and non-interactive mode
+
+**Deliverables:**
+- --type flag implementation
+- --non-interactive mode
+- Conflict resolution strategies
+- --dry-run preview mode
+- Enhanced colored output
+- Summary statistics
+
+**Success Criteria:**
+- Can filter by configuration type
+- Automation-friendly operation
+- All conflict modes working
+
+### Phase 3: Configuration Files
+**Goal:** Complete configuration file support
+
+**Deliverables:**
+- Config file parser
+- Multi-location config loading
+- Config merging logic
+- Ignore patterns for agents/skills/commands (gitignore syntax)
+- Direction-specific rules
+- Config debugging command
+
+**Success Criteria:**
+- All config locations work
+- Patterns apply correctly to agents, skills, and commands
+- Clear precedence rules
+- Config command helps debugging
+
+### Phase 4: Polish & Tools
+**Goal:** Production-ready with inspection tools
+
+**Deliverables:**
+- status and diff commands
+- Config validation
+- Windows platform support
+- Comprehensive error handling
+- Documentation and examples
+- Example config files
+
+**Success Criteria:**
+- All platforms supported
+- Complete feature set
+- Professional documentation
+- Config examples for common scenarios
+
+### Phase 5: Release & Enhancement
+**Goal:** Public release and iteration
+
+**Activities:**
+- Package for distribution
+- Create installation guides
+- Gather user feedback
+- Plan future enhancements
+
+**Future Considerations:**
+- Watch mode for continuous sync of agents/skills/commands
+- Git integration for version control
+- Batch operations for managing multiple agents/skills/commands
+- Team config sharing for standardized setups
+</milestones>
+
+<constraints>
+## Technical Constraints
+
+- Must ONLY sync agents, skills, and commands - no other file types or directories
+- Must be a single binary with no runtime dependencies
+- Must work offline without network access
+- Must follow symlinks by default and copy actual content
+- Must handle symlink loops gracefully
+- Cannot modify files without explicit user consent in interactive mode
+- Must handle interruption gracefully (Ctrl+C)
+
+## Operational Constraints
+
+- Must complete operations in reasonable time (<5 seconds for 100 agent/skill/command files)
+- Interactive mode must be responsive (<100ms per prompt)
+- Config file parsing must be fast (<50ms)
+- Must not consume excessive memory (< 100MB for typical use)
+- Must handle missing agents/, skills/, or commands/ directories gracefully
+- Must work with standard user permissions (no sudo required)
+
+## Security Constraints
+
+- Must validate all paths to prevent directory traversal
+- Must handle symlink loops and recursive symlinks safely
+- Must not expose sensitive information in logs
+- Must use secure file writing practices (atomic operations)
+- Config files must not execute arbitrary code
+- Must validate config file syntax before applying
+
+## Configuration Constraints
+
+- Config files must use a simple, human-readable format
+- Must support comments in config files
+- Must provide clear error messages for invalid configs
+- Must work without any config files present
+- Must support both global and project-specific configuration
+- Must maintain backward compatibility with config format
+</constraints>
+
+</PRD>
