@@ -19,6 +19,8 @@ mod integration_tests;
 
 pub use discovery::ConfigDiscovery;
 pub use merge::ConfigMerger;
+#[allow(unused_imports)] // Will be used by sync engine (Task 6)
+pub use patterns::PatternMatcher;
 pub use types::Config;
 pub use validation::ConfigValidator;
 
