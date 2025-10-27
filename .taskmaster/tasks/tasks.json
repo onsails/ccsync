@@ -1,0 +1,345 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and CLI Command Structure",
+        "description": "Initialize the Rust project, define the CLI structure, and set up command parsing for all required commands and flags.",
+        "details": "Use Rust 2021 edition. Scaffold the project with cargo. Use the latest stable version of the `clap` crate (v4.x) for command-line parsing, as it is the industry standard and supports subcommands, flags, and argument validation[4][1][3]. Define subcommands: `to-local`, `to-global`, `status`, `diff`, and `config`. Implement global flags: `--non-interactive`, `--yes-all`, `--dry-run`, `--type`, `--conflict`, `--verbose`, `--global-path`, `--local-path`, `--config`, `--no-config`, and `--preserve-symlinks`. Ensure help and usage output is clear and comprehensive. Structure code using modules for each command for maintainability[2][7].",
+        "testStrategy": "Unit test CLI parsing with various flag/argument combinations using `assert_cmd` and `clap`'s built-in test utilities. Validate help output and error handling for invalid input.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Rust Project with Cargo and 2021 Edition",
+            "description": "Set up the Rust project directory, initialize with Cargo, and ensure the project uses the Rust 2021 edition.",
+            "dependencies": [],
+            "details": "Create a new project directory and initialize it using cargo init. Verify the Cargo.toml specifies edition = \"2021\". Scaffold the basic project structure with src/main.rs as the entry point. Confirm Cargo and Rust are correctly installed by running cargo --version and cargo run to see \"Hello, world!\" output.",
+            "status": "done",
+            "testStrategy": "Verify project creation, edition setting in Cargo.toml, and that the basic binary runs as expected."
+          },
+          {
+            "id": 2,
+            "title": "Define CLI Structure with clap v4.x",
+            "description": "Implement the CLI command and flag structure using the latest stable clap crate, supporting all required subcommands and global flags.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add clap v4.x as a dependency in Cargo.toml. Define the root CLI application with subcommands: to-local, to-global, status, diff, and config. Implement global flags: --non-interactive, --yes-all, --dry-run, --type, --conflict, --verbose, --global-path, --local-path, --config, --no-config, and --preserve-symlinks. Structure the code using separate modules for each subcommand to ensure maintainability. Use clap's derive macros for declarative command and argument definitions.",
+            "status": "done",
+            "testStrategy": "Unit test CLI parsing with various flag/argument combinations using assert_cmd and clap's built-in test utilities. Validate that all commands and flags are recognized and that the modular structure compiles."
+          },
+          {
+            "id": 3,
+            "title": "Implement Comprehensive Help and Error Output",
+            "description": "Ensure the CLI provides clear, comprehensive help text and useful error messages for all commands and flags.",
+            "dependencies": [
+              2
+            ],
+            "details": "Leverage clap's built-in help generation to ensure --help and usage output is detailed and user-friendly. Customize error messages for invalid inputs, missing required arguments, and conflicting flags. Test edge cases such as unknown subcommands, invalid flag combinations, and missing mandatory options. Ensure error output guides users toward correct usage.",
+            "status": "done",
+            "testStrategy": "Validate help output for each subcommand and global flag. Test error handling by providing invalid inputs and verifying that error messages are clear and actionable. Use clap's test utilities to automate validation."
+          },
+          {
+            "id": 4,
+            "title": "Validate and Test CLI Parsing Logic",
+            "description": "Thoroughly test the CLI parsing logic, including subcommands, flags, and argument validation, to ensure robustness.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Write unit and integration tests covering all subcommands and global flags. Test combinations of flags, optional/required arguments, and invalid inputs. Verify that the correct modules are invoked for each subcommand. Ensure that global flags are properly propagated to all subcommands. Test help and error output in automated test suites.",
+            "status": "done",
+            "testStrategy": "Use assert_cmd for end-to-end CLI testing. Employ clap's test features for parsing logic. Automate test cases for valid and invalid inputs, and verify modular code structure by mocking module interactions."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "File Scanning, Filtering, and Symlink Resolution",
+        "description": "Implement recursive scanning of agents/, skills/, and commands/ directories, applying type filters and resolving symlinks.",
+        "details": "Use `walkdir` crate (v2.x) for efficient recursive directory traversal. Filter only agents/, skills/, and commands/ directories. Apply type filters from CLI and config. Use `std::fs::read_link` and `std::fs::canonicalize` to resolve symlinks and copy actual file contents by default. Detect and warn on broken symlinks. Implement symlink loop detection using a set of canonicalized paths. Support `--preserve-symlinks` flag to optionally copy symlinks as-is. Ignore all other files/directories. Ensure cross-platform path handling using `std::path::Path` and `dirs` crate for XDG compliance.",
+        "testStrategy": "Integration tests with sample directory trees containing regular files, symlinks, and broken symlinks. Validate correct file selection, symlink resolution, and error/warning output.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Recursive Directory Traversal with walkdir",
+            "description": "Implement recursive scanning of agents/, skills/, and commands/ directories using the walkdir crate, ensuring efficient and cross-platform traversal.",
+            "dependencies": [],
+            "details": "Use walkdir::WalkDir to recursively traverse the specified directories. Configure the iterator to skip all other directories and files not matching agents/, skills/, or commands/. Ensure the traversal is depth-first and handles platform-specific path separators correctly using std::path::Path. Integrate with the dirs crate for XDG-compliant path handling where applicable. The implementation should yield DirEntry objects for further processing in subsequent subtasks.",
+            "status": "pending",
+            "testStrategy": "Integration tests with directory trees containing nested agents/, skills/, and commands/ folders, mixed with unrelated files and directories. Verify only the target directories are traversed and platform path handling is correct."
+          },
+          {
+            "id": 2,
+            "title": "Type Filtering from CLI and Config",
+            "description": "Apply file type filters based on command-line arguments and configuration settings during directory traversal.",
+            "dependencies": [
+              1
+            ],
+            "details": "For each file encountered during traversal, apply filters specified via CLI flags and merged config (from Task 5). Filters may include file extensions, names, or other attributes. Skip files that do not match any filter. The filtering logic should be efficient and respect the precedence of CLI over config. Use pattern matching compatible with the ignore crate for complex rules.",
+            "status": "pending",
+            "testStrategy": "Unit and integration tests with varied filter rules, ensuring correct file selection and precedence handling. Test with both CLI and config-provided filters."
+          },
+          {
+            "id": 3,
+            "title": "Symlink Resolution, Broken Link Detection, and Loop Prevention",
+            "description": "Resolve symlinks to their canonical paths, detect and warn on broken links, and prevent symlink loops using a visited set.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "For each symlink encountered, use std::fs::read_link and std::fs::canonicalize to resolve the target. By default, copy the actual file contents, not the symlink. Detect broken symlinks and emit warnings. Maintain a set of canonicalized paths to detect and prevent symlink loops. If the --preserve-symlinks flag is set, copy symlinks as-is without resolution. Skip all other files and directories as specified.",
+            "status": "pending",
+            "testStrategy": "Integration tests with directory trees containing valid, broken, and looping symlinks. Validate correct resolution, warning output, and loop prevention. Test both default and --preserve-symlinks behavior."
+          },
+          {
+            "id": 4,
+            "title": "Cross-Platform Path Handling and XDG Compliance",
+            "description": "Ensure all path operations are cross-platform and respect XDG base directory specifications where applicable.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use std::path::Path for all path manipulations to ensure correct behavior across operating systems. When resolving user-specific directories (e.g., config files), use the dirs crate to follow XDG conventions. Normalize paths before comparison or storage to avoid issues with different separators or relative paths. Document and test edge cases involving Unicode, junctions, and network paths.",
+            "status": "pending",
+            "testStrategy": "Cross-platform integration tests, including Windows, macOS, and Linux. Test with non-ASCII paths, network shares, and XDG_CONFIG_HOME overrides. Verify path normalization and correct config file location resolution."
+          },
+          {
+            "id": 5,
+            "title": "Integration Testing with Realistic Directory Structures",
+            "description": "Design and execute integration tests covering all edge cases for directory traversal, filtering, symlink handling, and path operations.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create test directory trees with nested agents/, skills/, and commands/ folders, mixed with symlinks (valid, broken, looping), unrelated files, and platform-specific path cases. Automate validation of correct file selection, symlink resolution, warning output, and path handling. Include tests for the --preserve-symlinks flag and config/CLI filter interactions. Ensure tests are reproducible across platforms.",
+            "status": "pending",
+            "testStrategy": "Automated integration test suite with coverage for all subtask features. Include manual inspection of warning and error output. Test on all supported platforms."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "File Comparison, Diff Generation, and Conflict Detection",
+        "description": "Implement efficient file comparison, diff generation, and robust conflict detection logic.",
+        "details": "Use `sha2` crate (v0.10+) for fast file hashing to detect content changes. Track modification timestamps with `std::fs::metadata`. For diff display, use `similar` crate (v2.x) for color-coded, unified diffs. Detect conflicts when both source and destination have diverged since last sync. Support all conflict resolution strategies: fail, overwrite, skip, newer. Integrate with interactive and non-interactive modes. Ensure atomicity and safety in file operations using `tempfile` for staging writes.",
+        "testStrategy": "Unit and integration tests with files differing in content and timestamps. Validate diff output, conflict detection, and all resolution strategies. Fuzz test with large and binary files.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Fast File Hashing with SHA-256",
+            "description": "Detect file content changes efficiently by computing SHA-256 hashes using the `sha2` crate (v0.10+).",
+            "dependencies": [],
+            "details": "For each file, read its contents and compute a SHA-256 hash. Compare hashes between source and destination to detect content changes. Handle large and binary files efficiently by streaming file contents. Cache hashes to avoid redundant computation during the same session.",
+            "status": "pending",
+            "testStrategy": "Unit tests with files of varying sizes and types. Validate hash correctness and performance with large files. Test cache behavior."
+          },
+          {
+            "id": 2,
+            "title": "Track and Compare File Modification Timestamps",
+            "description": "Use `std::fs::metadata` to track and compare file modification times for change detection.",
+            "dependencies": [],
+            "details": "For each file, retrieve the last modification timestamp using `std::fs::metadata`. Compare timestamps between source and destination to detect external modifications. Handle platform-specific timestamp precision and timezone issues. Cache timestamps to optimize repeated checks.",
+            "status": "pending",
+            "testStrategy": "Unit tests with files having different modification times. Test timestamp retrieval on various platforms. Validate comparison logic."
+          },
+          {
+            "id": 3,
+            "title": "Generate Color-Coded, Unified Diffs with `similar`",
+            "description": "Produce human-readable, color-coded unified diffs for changed files using the `similar` crate (v2.x).",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "When a file differs in content, generate a unified diff using `similar::TextDiff`. Support line, word, and character-level diffing. Render diffs with ANSI color codes for clarity in terminal output. Integrate diff display in both interactive and non-interactive modes[2].",
+            "status": "pending",
+            "testStrategy": "Integration tests with sample file pairs. Validate diff output format and color rendering. Test with non-ASCII and binary files."
+          },
+          {
+            "id": 4,
+            "title": "Detect and Classify File Synchronization Conflicts",
+            "description": "Identify conflicts when both source and destination files have diverged since the last sync.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "A conflict occurs when both the source and destination files have changed (different hashes and newer timestamps than the last sync). Classify conflicts clearly for user feedback. Support detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.",
+            "status": "pending",
+            "testStrategy": "Unit and integration tests with conflicting file states. Validate conflict detection logic and classification. Test with deleted and renamed files."
+          },
+          {
+            "id": 5,
+            "title": "Implement All Conflict Resolution Strategies",
+            "description": "Support fail, overwrite, skip, and newer resolution strategies for detected conflicts.",
+            "dependencies": [
+              4
+            ],
+            "details": "For each conflict, apply the user-specified resolution strategy: fail (abort), overwrite (force sync), skip (ignore), or newer (keep the most recently modified file). Integrate with interactive prompts and non-interactive flags. Ensure strategy application is atomic and logged. Support session-wide 'all' resolution for batch operations.",
+            "status": "pending",
+            "testStrategy": "Integration tests for each resolution strategy. Validate atomicity and logging. Test with interactive and non-interactive modes."
+          },
+          {
+            "id": 6,
+            "title": "Ensure Atomic and Safe File Operations with `tempfile`",
+            "description": "Guarantee atomicity and safety during file writes by staging changes with `tempfile`.",
+            "dependencies": [
+              5
+            ],
+            "details": "Use the `tempfile` crate to create temporary files for staging writes. Only move (rename) the temporary file to the final destination after successful write, ensuring atomicity. Handle filesystem errors gracefully and clean up temp files on failure. Preserve file permissions and metadata during the operation. Support both interactive and non-interactive modes.",
+            "status": "pending",
+            "testStrategy": "Integration tests simulating write failures. Validate atomicity, cleanup, and metadata preservation. Test with large and binary files."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Interactive and Non-Interactive Operation Modes",
+        "description": "Implement interactive item-by-item confirmation, non-interactive automation, and dry-run preview.",
+        "details": "Default to interactive mode using `dialoguer` crate (v0.10+) for prompts. Show color-coded diffs before each action. Support options: yes, no, all, none, diff, quit. Remember 'all' choice for session. Implement `--non-interactive` and `--yes-all` flags to bypass prompts. For `--dry-run`, simulate all actions and clearly mark output as preview. Ensure correct exit codes for scripting. Handle Ctrl+C gracefully using `ctrlc` crate.",
+        "testStrategy": "Integration tests simulating user input and automation. Validate prompt logic, dry-run output, and correct exit codes. Test interruption handling.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Interactive Prompt Logic Using dialoguer",
+            "description": "Develop interactive item-by-item confirmation prompts with color-coded diffs and support for options: yes, no, all, none, diff, quit.",
+            "dependencies": [],
+            "details": "Use the `dialoguer` crate (v0.10+) to render confirmation and selection prompts. Integrate color-coded diff display before each action. Ensure prompt options are handled correctly and user choices are remembered for the session, especially 'all'.",
+            "status": "pending",
+            "testStrategy": "Simulate user input for all prompt options. Validate correct rendering of diffs and prompt flow. Test session memory for 'all' choice."
+          },
+          {
+            "id": 2,
+            "title": "Implement Non-Interactive Automation and Flag Handling",
+            "description": "Enable non-interactive operation via `--non-interactive` and `--yes-all` flags to bypass prompts and automate actions.",
+            "dependencies": [
+              1
+            ],
+            "details": "Parse CLI flags to detect non-interactive mode. Automatically confirm all actions when `--yes-all` is set. Ensure no prompts are shown and actions proceed without user intervention.",
+            "status": "pending",
+            "testStrategy": "Run automated tests with flags set. Confirm no prompts are displayed and all actions execute as expected."
+          },
+          {
+            "id": 3,
+            "title": "Implement Dry-Run Simulation and Preview Output",
+            "description": "Simulate all actions in dry-run mode, clearly marking output as a preview and ensuring no changes are made.",
+            "dependencies": [
+              2
+            ],
+            "details": "Detect `--dry-run` flag and modify execution flow to only simulate actions. Output should be clearly marked as a preview, showing intended changes without performing them.",
+            "status": "pending",
+            "testStrategy": "Test with `--dry-run` flag. Validate that no changes occur and output is clearly marked as a preview."
+          },
+          {
+            "id": 4,
+            "title": "Session State Management for Interactive Choices",
+            "description": "Track and remember user choices (especially 'all') within a session to avoid repeated prompts.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement session state tracking to remember if the user selects 'all' or similar options, ensuring subsequent actions respect this choice until session end.",
+            "status": "pending",
+            "testStrategy": "Test session behavior by selecting 'all' and verifying that subsequent items are processed without further prompts."
+          },
+          {
+            "id": 5,
+            "title": "Graceful Signal and Exit Code Handling",
+            "description": "Handle Ctrl+C interruptions gracefully and ensure correct exit codes for scripting and automation.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Use the `ctrlc` crate to intercept Ctrl+C and perform cleanup or exit gracefully. Ensure exit codes reflect success, failure, or interruption for scripting compatibility.",
+            "status": "pending",
+            "testStrategy": "Simulate Ctrl+C during operation. Validate graceful shutdown and correct exit codes for all operation modes."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Configuration File Parsing, Merging, and Pattern Matching",
+        "description": "Implement config file loading from multiple locations, merging with correct precedence, and support for ignore/include patterns.",
+        "details": "Use `serde` and `toml` crates for config parsing (TOML is human-readable and widely used in Rust). Support config files at: CLI flag, .ccsync.local, .ccsync, XDG_CONFIG_HOME/ccsync/config, ~/.config/ccsync/config. Merge configs with precedence: CLI > .ccsync.local > .ccsync > global. Implement additive merging for ignore patterns and override for booleans. Use `ignore` crate (v0.4+) for gitignore-style pattern matching. Support direction-specific and type-specific rules. Validate config syntax and provide clear error messages.",
+        "testStrategy": "Unit tests for config parsing, merging, and precedence. Test pattern matching with various ignore/include scenarios. Validate error handling for invalid configs.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Bidirectional Synchronization Logic (to-local and to-global)",
+        "description": "Implement core sync logic for `to-local` and `to-global` commands, applying all filters, conflict handling, and configuration rules.",
+        "details": "Integrate file scanning, filtering, diffing, and config logic. For each file, determine sync action based on comparison, config, and CLI flags. Apply ignore/include patterns and type filters. Handle symlinks per user settings. Ensure atomic file writes and preserve directory structure. Log all operations with clear, color-coded output. Provide summary statistics after operation. Ensure no data loss and safe failure on conflicts.",
+        "testStrategy": "End-to-end tests syncing between sample global and project directories with various config and CLI options. Validate correct files are synced, conflicts handled, and statistics reported.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Inspection and Debugging Commands (status, diff, config)",
+        "description": "Implement read-only inspection commands: `status`, `diff`, and `config` for transparency and debugging.",
+        "details": "For `status`, show summary of differences and conflicts by type. For `diff`, display full color-coded diffs for all differing files, respecting config filters. For `config`, display merged config, source of each setting, and test ignore patterns against actual files. Use `colored` crate for output. Ensure no file modifications occur. Provide clear, actionable output for users.",
+        "testStrategy": "Unit and integration tests for each command. Validate output accuracy, color coding, and config debugging features. Test with various config and directory setups.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Cross-Platform Support, Error Handling, and Documentation",
+        "description": "Ensure robust cross-platform compatibility, comprehensive error handling, and provide clear documentation and examples.",
+        "details": "Test on Linux, macOS, and Windows. Use `std::path::Path` and `dirs` crate for platform-specific paths. Handle permission errors, missing directories, and symlink loops gracefully. Use Rust's error handling best practices (`anyhow` crate for error context). Provide atomic file operations and secure file writes. Write thorough CLI help, man page, and example config files. Document all commands, flags, and config options. Include installation and usage guides.",
+        "testStrategy": "Manual and automated tests on all supported platforms. Fuzz test error scenarios. Validate documentation with user testing and feedback.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-10-27T13:09:03.870Z",
+      "updated": "2025-10-27T13:15:24.210Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

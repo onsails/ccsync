@@ -59,3 +59,10 @@ devenv.local.yaml
 
 # pre-commit
 .pre-commit-config.yaml
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
