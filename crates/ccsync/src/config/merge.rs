@@ -1,4 +1,18 @@
 //! Configuration merging with precedence rules
+//!
+//! # Merging Semantics
+//!
+//! - **Arrays** (ignore, include, rules): Additive - all values from all configs are combined
+//! - **Booleans**: OR semantics - if any config sets to `true`, result is `true`
+//!
+//! ## Boolean OR Semantics
+//!
+//! The boolean fields use OR semantics for safety. This means:
+//! - A lower-precedence config that enables a feature cannot be disabled by higher-precedence configs
+//! - Example: If global config has `follow_symlinks = true`, project config setting it to `false` won't disable it
+//! - Rationale: Explicit enablement in any config file should be honored (explicit > implicit)
+//!
+//! If you need true override semantics, use `Option<bool>` in TOML with `Some(true)` vs `Some(false)` vs `None`.
 
 use std::fs;
 use std::path::Path;
