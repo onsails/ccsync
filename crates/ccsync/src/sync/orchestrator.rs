@@ -8,30 +8,39 @@ use super::actions::SyncActionResolver;
 use super::executor::FileOperationExecutor;
 use super::SyncResult;
 use crate::comparison::{ConflictStrategy, FileComparator};
-use crate::config::{Config, PatternMatcher};
+use crate::config::{Config, PatternMatcher, SyncDirection};
 use crate::error::Result;
 use crate::scanner::{FileFilter, Scanner};
-
-/// Sync direction
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SyncDirection {
-    /// Sync from global (~/.claude) to local (.claude)
-    ToLocal,
-    /// Sync from local (.claude) to global (~/.claude)
-    ToGlobal,
-}
 
 /// Main sync engine
 pub struct SyncEngine {
     config: Config,
     direction: SyncDirection,
+    pattern_matcher: Option<PatternMatcher>,
 }
 
 impl SyncEngine {
     /// Create a new sync engine
-    #[must_use]
-    pub const fn new(config: Config, direction: SyncDirection) -> Self {
-        Self { config, direction }
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if pattern compilation fails.
+    pub fn new(config: Config, direction: SyncDirection) -> Result<Self> {
+        // Compile pattern matcher once during construction
+        let pattern_matcher = if !config.ignore.is_empty() || !config.include.is_empty() {
+            Some(PatternMatcher::with_patterns(
+                &config.ignore,
+                &config.include,
+            )?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            config,
+            direction,
+            pattern_matcher,
+        })
     }
 
     /// Execute the sync operation
@@ -47,23 +56,13 @@ impl SyncEngine {
         let scanner = Scanner::new(filter, self.config.preserve_symlinks == Some(true));
         let scan_result = scanner.scan(source_root);
 
-        // Apply pattern filters
-        let pattern_matcher = if !self.config.ignore.is_empty() || !self.config.include.is_empty()
-        {
-            Some(PatternMatcher::with_patterns(
-                &self.config.ignore,
-                &self.config.include,
-            )?)
-        } else {
-            None
-        };
-
         // Process each scanned file
         let executor = FileOperationExecutor::new(self.config.dry_run == Some(true));
+        let conflict_strategy = self.get_conflict_strategy();
 
         for file in &scan_result.files {
             // Apply pattern filter
-            if let Some(ref matcher) = pattern_matcher
+            if let Some(ref matcher) = self.pattern_matcher
                 && !matcher.should_include(&file.path, false) {
                     result.skipped += 1;
                     continue;
@@ -81,7 +80,7 @@ impl SyncEngine {
             let comparison = FileComparator::compare(
                 &file.path,
                 &dest_path,
-                Self::get_conflict_strategy(),
+                conflict_strategy,
             )?;
 
             // Determine action
@@ -89,7 +88,6 @@ impl SyncEngine {
                 file.path.clone(),
                 dest_path,
                 &comparison,
-                Self::get_conflict_strategy(),
             );
 
             // Execute action
@@ -107,8 +105,7 @@ impl SyncEngine {
     }
 
     /// Get conflict strategy from config or use default
-    const fn get_conflict_strategy() -> ConflictStrategy {
-        // Default to Fail if not specified
-        ConflictStrategy::Fail
+    fn get_conflict_strategy(&self) -> ConflictStrategy {
+        self.config.conflict_strategy.unwrap_or(ConflictStrategy::Fail)
     }
 }

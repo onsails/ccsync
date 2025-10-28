@@ -31,7 +31,7 @@ impl FileOperationExecutor {
         match action {
             SyncAction::Create { source, dest } => {
                 if self.dry_run {
-                    println!("[DRY RUN] Would create: {}", dest.display());
+                    eprintln!("[DRY RUN] Would create: {}", dest.display());
                 } else {
                     Self::copy_file(source, dest)?;
                 }
@@ -39,7 +39,7 @@ impl FileOperationExecutor {
             }
             SyncAction::Update { source, dest } => {
                 if self.dry_run {
-                    println!("[DRY RUN] Would update: {}", dest.display());
+                    eprintln!("[DRY RUN] Would update: {}", dest.display());
                 } else {
                     Self::copy_file(source, dest)?;
                 }
@@ -47,7 +47,7 @@ impl FileOperationExecutor {
             }
             SyncAction::Skip { path, reason } => {
                 if self.dry_run {
-                    println!("[DRY RUN] Would skip: {} ({})", path.display(), reason);
+                    eprintln!("[DRY RUN] Would skip: {} ({})", path.display(), reason);
                 }
                 result.skipped += 1;
             }
@@ -82,7 +82,7 @@ impl FileOperationExecutor {
             }
             ConflictStrategy::Overwrite => {
                 if self.dry_run {
-                    println!("[DRY RUN] Would overwrite: {}", dest.display());
+                    eprintln!("[DRY RUN] Would overwrite: {}", dest.display());
                 } else {
                     Self::copy_file(source, dest)?;
                 }
@@ -90,21 +90,21 @@ impl FileOperationExecutor {
             }
             ConflictStrategy::Skip => {
                 if self.dry_run {
-                    println!("[DRY RUN] Would skip conflict: {}", dest.display());
+                    eprintln!("[DRY RUN] Would skip conflict: {}", dest.display());
                 }
                 result.conflicts += 1;
             }
             ConflictStrategy::Newer => {
                 if source_newer {
                     if self.dry_run {
-                        println!("[DRY RUN] Would update (source newer): {}", dest.display());
+                        eprintln!("[DRY RUN] Would update (source newer): {}", dest.display());
                     } else {
                         Self::copy_file(source, dest)?;
                     }
                     result.updated += 1;
                 } else {
                     if self.dry_run {
-                        println!(
+                        eprintln!(
                             "[DRY RUN] Would skip (dest newer): {}",
                             dest.display()
                         );

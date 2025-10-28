@@ -9,7 +9,11 @@ mod executor;
 mod orchestrator;
 mod reporting;
 
-// Public exports will be added when integrating with CLI
+// Public exports for tests (will be made pub for CLI integration in future)
+#[cfg(test)]
+pub(crate) use orchestrator::SyncEngine;
+#[cfg(test)]
+pub(crate) use reporting::SyncReporter;
 
 /// Synchronization result with statistics
 #[derive(Debug, Clone, Default)]
@@ -50,7 +54,7 @@ mod integration_tests {
     use tempfile::TempDir;
 
     use super::*;
-    use crate::config::Config;
+    use crate::config::{Config, SyncDirection};
 
     fn setup_test_dirs() -> (TempDir, TempDir) {
         let source = TempDir::new().unwrap();
@@ -75,7 +79,7 @@ mod integration_tests {
         create_test_file(source_dir.path(), "skills/skill1/SKILL.md", "test skill");
 
         let config = Config::default();
-        let engine = SyncEngine::new(config, SyncDirection::ToLocal);
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
 
         let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
 
@@ -99,7 +103,7 @@ mod integration_tests {
         create_test_file(dest_dir.path(), "agents/test.md", content);
 
         let config = Config::default();
-        let engine = SyncEngine::new(config, SyncDirection::ToLocal);
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
 
         let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
 
@@ -119,7 +123,7 @@ mod integration_tests {
         let mut config = Config::default();
         config.ignore = vec!["**/ignore.md".to_string()];
 
-        let engine = SyncEngine::new(config, SyncDirection::ToLocal);
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
         let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
 
         assert_eq!(result.created, 1);
@@ -137,7 +141,7 @@ mod integration_tests {
         create_test_file(dest_dir.path(), "agents/test.md", "dest content");
 
         let config = Config::default(); // Default is Fail
-        let engine = SyncEngine::new(config, SyncDirection::ToLocal);
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
 
         let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
 
@@ -156,7 +160,7 @@ mod integration_tests {
         let mut config = Config::default();
         config.dry_run = Some(true);
 
-        let engine = SyncEngine::new(config, SyncDirection::ToLocal);
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
         let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
 
         // Should report as created
@@ -177,7 +181,7 @@ mod integration_tests {
         let config = Config::default();
 
         // Sync to dir2
-        let engine = SyncEngine::new(config.clone(), SyncDirection::ToLocal);
+        let engine = SyncEngine::new(config.clone(), SyncDirection::ToLocal).unwrap();
         let result = engine.sync(dir1.path(), dir2.path()).unwrap();
         assert_eq!(result.created, 1);
 
@@ -185,7 +189,7 @@ mod integration_tests {
         create_test_file(dir2.path(), "agents/from2.md", "content 2");
 
         // Sync back to dir1
-        let engine = SyncEngine::new(config, SyncDirection::ToGlobal);
+        let engine = SyncEngine::new(config, SyncDirection::ToGlobal).unwrap();
         let result = engine.sync(dir2.path(), dir1.path()).unwrap();
         assert_eq!(result.created, 1);
 

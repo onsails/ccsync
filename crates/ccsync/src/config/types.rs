@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::comparison::ConflictStrategy;
+
 /// Sync direction
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -72,6 +74,10 @@ pub struct Config {
     /// Non-interactive mode (no prompts)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub non_interactive: Option<bool>,
+
+    /// Conflict resolution strategy
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conflict_strategy: Option<ConflictStrategy>,
 
     /// Advanced sync rules (direction and type-specific)
     #[serde(default)]

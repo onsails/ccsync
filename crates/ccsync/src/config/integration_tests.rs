@@ -73,6 +73,7 @@ fn test_config_with_rules() {
         preserve_symlinks: Some(false),
         dry_run: Some(false),
         non_interactive: Some(false),
+        conflict_strategy: None,
         rules: vec![
             SyncRule {
                 patterns: vec!["agents/*.md".to_string()],

@@ -38,7 +38,6 @@ impl SyncActionResolver {
         source: PathBuf,
         dest: PathBuf,
         comparison: &ComparisonResult,
-        _default_strategy: ConflictStrategy,
     ) -> SyncAction {
         match comparison {
             ComparisonResult::Identical => SyncAction::Skip {
