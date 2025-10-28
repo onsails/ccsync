@@ -58,6 +58,12 @@ pub enum ComparisonResult {
 /// File comparator that combines hashing, timestamps, and diff generation
 pub struct FileComparator;
 
+impl Default for FileComparator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileComparator {
     /// Create a new file comparator
     #[must_use]

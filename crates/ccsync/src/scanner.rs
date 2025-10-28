@@ -93,12 +93,11 @@ impl Scanner {
         let mut resolved_files = Vec::new();
         for file in files {
             if self.filter.should_include(&file.path) {
+                // Verify symlink is valid (not broken) but keep original path
                 match self.symlink_resolver.resolve(&file.path) {
-                    Ok(resolved) => {
-                        resolved_files.push(ScannedFile {
-                            path: resolved.into_path(),
-                            mode: file.mode,
-                        });
+                    Ok(_resolved) => {
+                        // Keep the original path for relative path calculation
+                        resolved_files.push(file);
                     }
                     Err(e) => {
                         warnings.push(format!("Symlink resolution failed: {e}"));

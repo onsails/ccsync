@@ -12,6 +12,12 @@ use crate::error::Result;
 /// Diff generator for creating visual diffs
 pub struct DiffGenerator;
 
+impl Default for DiffGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DiffGenerator {
     /// Create a new diff generator
     #[must_use]
@@ -41,6 +47,7 @@ impl DiffGenerator {
     }
 
     /// Generate a diff from string contents
+    #[must_use]
     pub fn generate_from_content(
         source_content: &str,
         dest_content: &str,
@@ -87,6 +94,10 @@ impl DiffGenerator {
     }
 
     /// Generate a simple line-by-line diff without colors (for testing)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if files cannot be read.
     pub fn generate_plain(source: &Path, destination: &Path) -> Result<String> {
         let source_content = fs::read_to_string(source)
             .with_context(|| format!("Failed to read source file: {}", source.display()))?;

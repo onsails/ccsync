@@ -20,13 +20,10 @@ pub mod error {
 pub(crate) mod scanner;
 
 /// File comparison and conflict detection
-#[cfg_attr(not(test), allow(dead_code))]
-pub(crate) mod comparison;
+pub mod comparison;
 
 /// Configuration file parsing and management
-#[cfg_attr(not(test), allow(dead_code))]
-pub(crate) mod config;
+pub mod config;
 
 /// Bidirectional synchronization engine
-#[cfg_attr(not(test), allow(dead_code))]
-pub(crate) mod sync;
+pub mod sync;

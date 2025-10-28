@@ -17,7 +17,20 @@ impl SyncReporter {
         let _ = writeln!(output, "Created:  {}", result.created);
         let _ = writeln!(output, "Updated:  {}", result.updated);
         let _ = writeln!(output, "Deleted:  {}", result.deleted);
-        let _ = writeln!(output, "Skipped:  {}", result.skipped);
+
+        // Show skipped count with reasons breakdown
+        if result.skipped > 0 && !result.skip_reasons.is_empty() {
+            let _ = write!(output, "Skipped:  {}", result.skipped);
+            let mut reasons: Vec<_> = result.skip_reasons.iter().collect();
+            reasons.sort_by_key(|(_, count)| std::cmp::Reverse(**count));
+            for (reason, count) in reasons {
+                let _ = write!(output, " ({reason}: {count})");
+            }
+            let _ = writeln!(output);
+        } else {
+            let _ = writeln!(output, "Skipped:  {}", result.skipped);
+        }
+
         let _ = writeln!(output, "Conflicts: {}", result.conflicts);
 
         if !result.errors.is_empty() {

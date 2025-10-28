@@ -20,6 +20,12 @@ pub struct ConfigFiles {
 /// Config file discovery
 pub struct ConfigDiscovery;
 
+impl Default for ConfigDiscovery {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigDiscovery {
     /// Create a new config discovery instance
     #[must_use]

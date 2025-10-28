@@ -9,11 +9,9 @@ mod executor;
 mod orchestrator;
 mod reporting;
 
-// Public exports for tests (will be made pub for CLI integration in future)
-#[cfg(test)]
-pub(crate) use orchestrator::SyncEngine;
-#[cfg(test)]
-pub(crate) use reporting::SyncReporter;
+// Public exports for CLI integration
+pub use orchestrator::SyncEngine;
+pub use reporting::SyncReporter;
 
 /// Synchronization result with statistics
 #[derive(Debug, Clone, Default)]
@@ -26,6 +24,8 @@ pub struct SyncResult {
     pub deleted: usize,
     /// Files skipped
     pub skipped: usize,
+    /// Skip reasons with counts
+    pub skip_reasons: std::collections::HashMap<String, usize>,
     /// Conflicts encountered
     pub conflicts: usize,
     /// Errors encountered

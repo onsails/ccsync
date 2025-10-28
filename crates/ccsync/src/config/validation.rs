@@ -6,6 +6,12 @@ use crate::error::Result;
 /// Configuration validator
 pub struct ConfigValidator;
 
+impl Default for ConfigValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigValidator {
     /// Create a new config validator
     #[must_use]
