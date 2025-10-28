@@ -6,17 +6,8 @@ Keep your Claude Code setup consistent across projects while maintaining project
 
 ## 📦 Installation
 
-### Via Cargo
-
 ```bash
 cargo install ccsync
-```
-
-### Via Homebrew
-
-```bash
-brew tap onsails/core https://github.com/onsails/homebrew-core
-brew install onsails/core/ccsync --build-from-source
 ```
 
 ## 🚀 Quick Start
