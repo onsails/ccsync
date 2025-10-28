@@ -43,7 +43,7 @@ impl ConfigManager {
     /// Returns an error if config files are invalid or cannot be read.
     pub fn load(cli_config_path: Option<&std::path::Path>) -> Result<Config> {
         // Discover all config files
-        let config_files = ConfigDiscovery::discover(cli_config_path);
+        let config_files = ConfigDiscovery::discover(cli_config_path)?;
 
         // Parse and merge configs
         let merged = ConfigMerger::merge(&config_files)?;

@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Sync direction
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SyncDirection {
     /// Sync from global to local
@@ -13,7 +13,7 @@ pub enum SyncDirection {
 }
 
 /// File type for type-specific rules
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileType {
     /// Text files
@@ -27,7 +27,7 @@ pub enum FileType {
 }
 
 /// Sync rule for direction and type-specific configuration
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SyncRule {
     /// File patterns this rule applies to
     #[serde(default)]
