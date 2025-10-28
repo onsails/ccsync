@@ -15,7 +15,8 @@ cargo install ccsync
 ### Via Homebrew
 
 ```bash
-brew install onsails/homebrew-core/ccsync --build-from-source
+brew tap onsails/core https://github.com/onsails/homebrew-core
+brew install onsails/core/ccsync --build-from-source
 ```
 
 ## 🚀 Quick Start
@@ -157,16 +158,16 @@ ccsync to-local --conflict=newer --yes-all
 
 ## ❓ FAQ
 
-**Q: What happens if I press 'y' on a conflict?**
+**Q: What happens if I press 'y' on a conflict?**<br>
 A: The source file will overwrite the destination (or follow your `--conflict` strategy).
 
-**Q: Can I review all changes before applying them?**
+**Q: Can I review all changes before applying them?**<bre>
 A: Yes! Use `ccsync to-local --dry-run` to preview without making changes.
 
-**Q: What if files are already in sync?**
+**Q: What if files are already in sync?**<br>
 A: You'll see `Skipped: N (identical content: N)` - no operations performed.
 
-**Q: How do I automate this for scripts?**
+**Q: How do I automate this for scripts?**<br>
 A: Use `ccsync to-local --yes-all` to skip all prompts.
 
 
