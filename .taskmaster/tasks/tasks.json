@@ -349,27 +349,92 @@
         "id": 6,
         "title": "Bidirectional Synchronization Logic (to-local and to-global)",
         "description": "Implement core sync logic for `to-local` and `to-global` commands, applying all filters, conflict handling, and configuration rules.",
-        "details": "Integrate file scanning, filtering, diffing, and config logic. For each file, determine sync action based on comparison, config, and CLI flags. Apply ignore/include patterns and type filters. Handle symlinks per user settings. Ensure atomic file writes and preserve directory structure. Log all operations with clear, color-coded output. Provide summary statistics after operation. Ensure no data loss and safe failure on conflicts.",
-        "testStrategy": "End-to-end tests syncing between sample global and project directories with various config and CLI options. Validate correct files are synced, conflicts handled, and statistics reported.",
-        "priority": "high",
+        "status": "pending",
         "dependencies": [
           2,
           3,
           5
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "Integrate file scanning, filtering, diffing, and config logic. For each file, determine sync action based on comparison, config, and CLI flags. Apply ignore/include patterns and type filters. Handle symlinks per user settings. Ensure atomic file writes and preserve directory structure. Log all operations with clear, color-coded output. Provide summary statistics after operation. Ensure no data loss and safe failure on conflicts. Interactive confirmations will be added in Task 4. For now, sync operations use config/CLI strategy without prompting.",
+        "testStrategy": "End-to-end tests syncing between sample global and project directories with various config and CLI options. Validate correct files are synced, conflicts handled, and statistics reported.",
         "subtasks": [
           {
             "id": 1,
-            "title": "Ensure Atomic and Safe File Operations with `tempfile`",
-            "description": "Guarantee atomicity and safety during file writes by staging changes with `tempfile`.",
+            "title": "Implement Sync Planning and Operation Orchestration",
+            "description": "Design and implement the high-level orchestration logic that coordinates the entire sync process for both to-local and to-global operations.",
+            "dependencies": [],
+            "details": "Create a SyncPlanner struct that takes CLI arguments, config, and determines the sync direction. Implement methods to coordinate the overall sync workflow including scanning, filtering, diffing, and action execution. Define clear interfaces between components and ensure proper error propagation. Include logging setup based on verbosity level.",
             "status": "pending",
+            "testStrategy": "Unit tests for the orchestration logic with mocked dependencies. Integration tests verifying the correct sequence of operations for both sync directions."
+          },
+          {
+            "id": 2,
+            "title": "Develop Sync Action Determination Logic",
+            "description": "Implement the core logic to determine the appropriate sync action for each file based on comparison results, configuration, and CLI flags.",
             "dependencies": [
-              5,
-              3
+              1
             ],
-            "details": "Use the `tempfile` crate to create temporary files for staging writes. Only move (rename) the temporary file to the final destination after successful write, ensuring atomicity. Handle filesystem errors gracefully and clean up temp files on failure. Preserve file permissions and metadata during the operation. Support both interactive and non-interactive modes.",
-            "testStrategy": ""
+            "details": "Create a SyncActionResolver that analyzes file comparison results and determines whether to create, update, delete, or skip each file. Incorporate CLI flags like --dry-run and --conflict into decision making. Define a SyncAction enum with variants like Create, Update, Delete, Skip, and Conflict. Include metadata with each action such as file paths, reason for action, and conflict details if applicable.",
+            "status": "pending",
+            "testStrategy": "Unit tests covering all possible file comparison scenarios and configuration combinations. Test each conflict resolution strategy separately."
+          },
+          {
+            "id": 3,
+            "title": "Implement Filter Application System",
+            "description": "Create a comprehensive filtering system that applies ignore/include patterns and type filters to determine which files should be included in the sync operation.",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a FilterEngine that combines patterns from .syncignore files, CLI --type flags, and configuration rules. Implement pattern matching for file paths using glob patterns. Support directory-specific filtering rules for agents/, skills/, and commands/. Ensure proper precedence of filter rules with explicit includes overriding excludes. Add detailed logging of filter decisions for debugging.",
+            "status": "pending",
+            "testStrategy": "Unit tests for pattern matching logic. Integration tests with various filter combinations against sample directory structures. Test edge cases like nested ignore patterns."
+          },
+          {
+            "id": 4,
+            "title": "Build Conflict Detection and Resolution System",
+            "description": "Implement robust conflict detection and resolution logic that handles file conflicts according to user preferences and ensures data safety.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a ConflictResolver that identifies conflicts when both source and destination files exist with different content. Implement all resolution strategies: fail, overwrite, skip, and newer-wins. Add interactive conflict resolution with user prompts when not in non-interactive mode. Include detailed conflict information in logs and user prompts. Ensure proper handling of timestamp comparison for newer-wins strategy.",
+            "status": "pending",
+            "testStrategy": "Unit tests for each conflict resolution strategy. Integration tests simulating various conflict scenarios. Test interactive and non-interactive modes with mock user input."
+          },
+          {
+            "id": 5,
+            "title": "Develop Symlink Management System",
+            "description": "Implement specialized handling for symlinks according to user configuration, ensuring proper resolution and preservation options.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a SymlinkHandler that processes symlinks according to the --preserve-symlinks flag and configuration. Implement logic to either copy the target file content or recreate the symlink in the destination. Handle relative vs. absolute symlinks appropriately. Detect and safely handle symlink loops and broken symlinks with proper error messages. Ensure cross-platform compatibility for symlink operations.",
+            "status": "pending",
+            "testStrategy": "Unit tests for symlink resolution logic. Integration tests with various symlink configurations including nested symlinks, relative and absolute paths. Test on multiple platforms if possible."
+          },
+          {
+            "id": 6,
+            "title": "Implement Atomic File Operations and Directory Structure Preservation",
+            "description": "Create a system for safe, atomic file operations that preserves directory structure and ensures no data loss during sync.",
+            "dependencies": [
+              2,
+              4,
+              5
+            ],
+            "details": "Develop a FileOperationExecutor that performs create, update, and delete operations atomically. Use temporary files and rename operations to ensure atomicity. Create parent directories as needed. Preserve file permissions and timestamps where appropriate. Implement rollback capability for failed operations. Add detailed logging for each file operation. Handle platform-specific file system constraints. Use the ConflictStrategy from config or CLI flags directly. If a conflict occurs and no strategy is set, default to 'fail' (abort with error). Log all operations but don't prompt for confirmation. Interactive confirmations will be added in Task 4. For now, sync operations use config/CLI strategy without prompting.",
+            "status": "pending",
+            "testStrategy": "Unit tests for atomic operations. Integration tests verifying directory structure preservation. Stress tests with interrupted operations to verify no data loss. Test on different file systems if possible."
+          },
+          {
+            "id": 7,
+            "title": "Create Sync Summary and Reporting System",
+            "description": "Implement comprehensive logging and reporting of sync operations with statistics, color-coded output, and operation summaries.",
+            "dependencies": [
+              6
+            ],
+            "details": "Develop a SyncReporter that tracks all operations performed during sync. Generate color-coded, human-readable summaries showing counts of created, updated, deleted, skipped, and conflicted files. Include timing information and error counts. Format output differently based on verbosity level. For dry runs, clearly indicate what would happen without actual changes. Implement machine-readable output option for potential scripting integration.",
+            "status": "pending",
+            "testStrategy": "Unit tests for statistics calculation and formatting. Integration tests verifying correct reporting for various sync scenarios. Visual inspection of color-coded output formats."
           }
         ]
       },
