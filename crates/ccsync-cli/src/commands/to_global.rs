@@ -4,7 +4,12 @@ pub struct ToGlobal;
 
 impl ToGlobal {
     #[allow(clippy::unnecessary_wraps)]
-    pub fn execute(types: &[ConfigType], conflict: &ConflictMode, verbose: bool, dry_run: bool) -> anyhow::Result<()> {
+    pub fn execute(
+        types: &[ConfigType],
+        conflict: &ConflictMode,
+        verbose: bool,
+        dry_run: bool,
+    ) -> anyhow::Result<()> {
         if verbose {
             println!("Executing to-global command");
             println!("Types: {types:?}");

@@ -3,8 +3,8 @@
 use std::fs;
 use tempfile::TempDir;
 
-use super::{Config, ConfigManager};
 use super::types::{FileType, SyncDirection, SyncRule};
+use super::{Config, ConfigManager};
 
 #[test]
 fn test_full_config_workflow() {
@@ -58,10 +58,12 @@ preserve_symlinks = true
     let result = ConfigManager::load(Some(&config_file));
 
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("follow_symlinks and preserve_symlinks"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("follow_symlinks and preserve_symlinks")
+    );
 }
 
 #[test]
@@ -73,6 +75,7 @@ fn test_config_with_rules() {
         preserve_symlinks: Some(false),
         dry_run: Some(false),
         non_interactive: Some(false),
+        conflict_strategy: None,
         rules: vec![
             SyncRule {
                 patterns: vec!["agents/*.md".to_string()],

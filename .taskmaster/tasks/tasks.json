@@ -18,7 +18,8 @@
             "dependencies": [],
             "details": "Create a new project directory and initialize it using cargo init. Verify the Cargo.toml specifies edition = \"2021\". Scaffold the basic project structure with src/main.rs as the entry point. Confirm Cargo and Rust are correctly installed by running cargo --version and cargo run to see \"Hello, world!\" output.",
             "status": "done",
-            "testStrategy": "Verify project creation, edition setting in Cargo.toml, and that the basic binary runs as expected."
+            "testStrategy": "Verify project creation, edition setting in Cargo.toml, and that the basic binary runs as expected.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -29,7 +30,8 @@
             ],
             "details": "Add clap v4.x as a dependency in Cargo.toml. Define the root CLI application with subcommands: to-local, to-global, status, diff, and config. Implement global flags: --non-interactive, --yes-all, --dry-run, --type, --conflict, --verbose, --global-path, --local-path, --config, --no-config, and --preserve-symlinks. Structure the code using separate modules for each subcommand to ensure maintainability. Use clap's derive macros for declarative command and argument definitions.",
             "status": "done",
-            "testStrategy": "Unit test CLI parsing with various flag/argument combinations using assert_cmd and clap's built-in test utilities. Validate that all commands and flags are recognized and that the modular structure compiles."
+            "testStrategy": "Unit test CLI parsing with various flag/argument combinations using assert_cmd and clap's built-in test utilities. Validate that all commands and flags are recognized and that the modular structure compiles.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -40,7 +42,8 @@
             ],
             "details": "Leverage clap's built-in help generation to ensure --help and usage output is detailed and user-friendly. Customize error messages for invalid inputs, missing required arguments, and conflicting flags. Test edge cases such as unknown subcommands, invalid flag combinations, and missing mandatory options. Ensure error output guides users toward correct usage.",
             "status": "done",
-            "testStrategy": "Validate help output for each subcommand and global flag. Test error handling by providing invalid inputs and verifying that error messages are clear and actionable. Use clap's test utilities to automate validation."
+            "testStrategy": "Validate help output for each subcommand and global flag. Test error handling by providing invalid inputs and verifying that error messages are clear and actionable. Use clap's test utilities to automate validation.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -52,9 +55,13 @@
             ],
             "details": "Write unit and integration tests covering all subcommands and global flags. Test combinations of flags, optional/required arguments, and invalid inputs. Verify that the correct modules are invoked for each subcommand. Ensure that global flags are properly propagated to all subcommands. Test help and error output in automated test suites.",
             "status": "done",
-            "testStrategy": "Use assert_cmd for end-to-end CLI testing. Employ clap's test features for parsing logic. Automate test cases for valid and invalid inputs, and verify modular code structure by mocking module interactions."
+            "testStrategy": "Use assert_cmd for end-to-end CLI testing. Employ clap's test features for parsing logic. Automate test cases for valid and invalid inputs, and verify modular code structure by mocking module interactions.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 4,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down project initialization, CLI structure definition, command/flag parsing, and help/error output validation into discrete subtasks."
       },
       {
         "id": 2,
@@ -62,7 +69,7 @@
         "description": "Implement scanning of agents/, skills/, and commands/ directories with directory-specific traversal patterns, applying type filters and resolving symlinks.",
         "status": "done",
         "dependencies": [
-          1
+          "1"
         ],
         "priority": "high",
         "details": "Implement directory-specific scanning patterns: agents/ (flat, *.md files only), skills/ (one level deep, SKILL.md pattern), and commands/ (full recursion with walkdir). Use `walkdir` crate (v2.x) for recursive directory traversal where needed. Apply type filters from CLI and config. Use `std::fs::read_link` and `std::fs::canonicalize` to resolve symlinks and copy actual file contents by default. Detect and warn on broken symlinks. Implement symlink loop detection using a set of canonicalized paths. Support `--preserve-symlinks` flag to optionally copy symlinks as-is. Ignore all other files/directories. Ensure cross-platform path handling using `std::path::Path` and `dirs` crate for XDG compliance.",
@@ -75,7 +82,8 @@
             "dependencies": [],
             "details": "Implement three distinct scanning patterns: 1) For agents/: Use direct iteration (no recursion) to scan only *.md files directly in the agents/ directory. 2) For skills/: Iterate one level of subdirectories and look for SKILL.md in each skill folder. 3) For commands/: Use walkdir::WalkDir for full recursive traversal of commands/**/*.md. Ensure the traversal handles platform-specific path separators correctly using std::path::Path. Integrate with the dirs crate for XDG-compliant path handling where applicable. The implementation should yield file entries for further processing in subsequent subtasks.",
             "status": "done",
-            "testStrategy": "Integration tests with directory trees containing the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Verify only the target files are found and platform path handling is correct."
+            "testStrategy": "Integration tests with directory trees containing the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Verify only the target files are found and platform path handling is correct.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -86,7 +94,8 @@
             ],
             "details": "For each file encountered during traversal, apply filters specified via CLI flags and merged config (from Task 5). Filters may include file extensions, names, or other attributes. Skip files that do not match any filter. The filtering logic should be efficient and respect the precedence of CLI over config. Use pattern matching compatible with the ignore crate for complex rules.",
             "status": "done",
-            "testStrategy": "Unit and integration tests with varied filter rules, ensuring correct file selection and precedence handling. Test with both CLI and config-provided filters."
+            "testStrategy": "Unit and integration tests with varied filter rules, ensuring correct file selection and precedence handling. Test with both CLI and config-provided filters.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -98,7 +107,8 @@
             ],
             "details": "For each symlink encountered, use std::fs::read_link and std::fs::canonicalize to resolve the target. By default, copy the actual file contents, not the symlink. Detect broken symlinks and emit warnings. Maintain a set of canonicalized paths to detect and prevent symlink loops. If the --preserve-symlinks flag is set, copy symlinks as-is without resolution. Skip all other files and directories as specified.",
             "status": "done",
-            "testStrategy": "Integration tests with directory trees containing valid, broken, and looping symlinks. Validate correct resolution, warning output, and loop prevention. Test both default and --preserve-symlinks behavior."
+            "testStrategy": "Integration tests with directory trees containing valid, broken, and looping symlinks. Validate correct resolution, warning output, and loop prevention. Test both default and --preserve-symlinks behavior.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -109,7 +119,8 @@
             ],
             "details": "Use std::path::Path for all path manipulations to ensure correct behavior across operating systems. When resolving user-specific directories (e.g., config files), use the dirs crate to follow XDG conventions. Normalize paths before comparison or storage to avoid issues with different separators or relative paths. Document and test edge cases involving Unicode, junctions, and network paths.",
             "status": "done",
-            "testStrategy": "Cross-platform integration tests, including Windows, macOS, and Linux. Test with non-ASCII paths, network shares, and XDG_CONFIG_HOME overrides. Verify path normalization and correct config file location resolution."
+            "testStrategy": "Cross-platform integration tests, including Windows, macOS, and Linux. Test with non-ASCII paths, network shares, and XDG_CONFIG_HOME overrides. Verify path normalization and correct config file location resolution.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -123,9 +134,13 @@
             ],
             "details": "Create test directory trees matching the expected patterns: flat agents/ with *.md files, skills/ with subdirectories containing SKILL.md, and commands/ with nested directories. Include symlinks (valid, broken, looping), unrelated files, and platform-specific path cases. Automate validation of correct file selection, symlink resolution, warning output, and path handling. Include tests for the --preserve-symlinks flag and config/CLI filter interactions. Ensure tests are reproducible across platforms.",
             "status": "done",
-            "testStrategy": "Automated integration test suite with coverage for all subtask features. Include manual inspection of warning and error output. Test on all supported platforms."
+            "testStrategy": "Automated integration test suite with coverage for all subtask features. Include manual inspection of warning and error output. Test on all supported platforms.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Decompose into directory traversal, type filtering, symlink resolution, broken/loop detection, and cross-platform path handling."
       },
       {
         "id": 3,
@@ -133,7 +148,7 @@
         "description": "Implement efficient file comparison, diff generation, and robust conflict detection logic.",
         "status": "done",
         "dependencies": [
-          2
+          "2"
         ],
         "priority": "high",
         "details": "Use `sha2` crate (v0.10+) for fast file hashing to detect content changes. Track modification timestamps with `std::fs::metadata`. For diff display, use `similar` crate (v2.x) for color-coded, unified diffs. Detect conflicts when both source and destination files exist but have different content. Support all conflict resolution strategies: fail, overwrite, skip, newer. Integrate with interactive and non-interactive modes.",
@@ -146,7 +161,8 @@
             "dependencies": [],
             "details": "For each file, read its contents and compute a SHA-256 hash. Compare hashes between source and destination to detect content changes. Handle large and binary files efficiently by streaming file contents. Cache hashes to avoid redundant computation during the same session.",
             "status": "done",
-            "testStrategy": "Unit tests with files of varying sizes and types. Validate hash correctness and performance with large files. Test cache behavior."
+            "testStrategy": "Unit tests with files of varying sizes and types. Validate hash correctness and performance with large files. Test cache behavior.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -155,7 +171,8 @@
             "dependencies": [],
             "details": "For each file, retrieve the last modification timestamp using `std::fs::metadata`. Compare timestamps between source and destination to determine which file is newer. Handle platform-specific timestamp precision and timezone issues. Cache timestamps to optimize repeated checks.",
             "status": "done",
-            "testStrategy": "Unit tests with files having different modification times. Test timestamp retrieval on various platforms. Validate comparison logic."
+            "testStrategy": "Unit tests with files having different modification times. Test timestamp retrieval on various platforms. Validate comparison logic.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -167,7 +184,8 @@
             ],
             "details": "When a file differs in content, generate a unified diff using `similar::TextDiff`. Support line, word, and character-level diffing. Render diffs with ANSI color codes for clarity in terminal output. Integrate diff display in both interactive and non-interactive modes.",
             "status": "done",
-            "testStrategy": "Integration tests with sample file pairs. Validate diff output format and color rendering. Test with non-ASCII and binary files."
+            "testStrategy": "Integration tests with sample file pairs. Validate diff output format and color rendering. Test with non-ASCII and binary files.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -179,7 +197,8 @@
             ],
             "details": "A conflict occurs when both the source and destination files exist and have different content (different hashes). Classify conflicts clearly for user feedback. Support detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.\n<info added on 2025-10-27T15:29:33.154Z>\nA conflict occurs when both the source file AND the destination file exist, but they have different content (different SHA-256 hashes). This is a simple current-state comparison - no sync history tracking is needed.\n\nConflict classification:\n- Source only exists: No conflict (needs copying to destination)\n- Destination only exists: No conflict (source was deleted or never existed)\n- Both exist, same content: No conflict (files are identical, skip)\n- Both exist, different content: CONFLICT (needs resolution strategy)\n\nSupport detection of all conflict scenarios, including edge cases like deleted files. Log conflict details for debugging and user interaction.\n</info added on 2025-10-27T15:29:33.154Z>",
             "status": "done",
-            "testStrategy": "Unit and integration tests with conflicting file states. Validate conflict detection logic and classification. Test with deleted and renamed files."
+            "testStrategy": "Unit and integration tests with conflicting file states. Validate conflict detection logic and classification. Test with deleted and renamed files.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -190,9 +209,13 @@
             ],
             "details": "For each conflict, apply the user-specified resolution strategy: fail (abort), overwrite (force sync), skip (ignore), or newer (keep the most recently modified file). Integrate with interactive prompts and non-interactive flags. Ensure strategy application is atomic and logged. Support session-wide 'all' resolution for batch operations.\n<info added on 2025-10-27T15:30:28.673Z>\nDefine an enum for ConflictResolution strategies (Fail, Overwrite, Skip, Newer) and implement logic to determine which strategy to apply based on command-line flags, interactive user prompts, or default behavior. This subtask focuses solely on determining and returning the appropriate conflict resolution strategy, not executing file operations.\n\nThe implementation should:\n1. Create a ConflictResolution enum with variants for Fail, Overwrite, Skip, and Newer\n2. Process CLI flags like --conflict-strategy to determine the user's preferred strategy\n3. If in interactive mode and no strategy is specified via flags, prompt the user to choose a strategy\n4. Support remembering the user's choice for all conflicts in the current session\n5. Implement default behavior when no explicit strategy is provided\n6. Return the determined strategy to the calling code for execution\n\nThis subtask is strictly a decision/analysis step that determines what should be done with conflicts, leaving the actual file operations to task 6 (Bidirectional Synchronization Logic).\n</info added on 2025-10-27T15:30:28.673Z>",
             "status": "done",
-            "testStrategy": "Integration tests for each resolution strategy. Validate atomicity and logging. Test with interactive and non-interactive modes."
+            "testStrategy": "Integration tests for each resolution strategy. Validate atomicity and logging. Test with interactive and non-interactive modes.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 6,
+        "expansionPrompt": "Split into file hashing, timestamp tracking, diff generation, conflict detection, resolution strategy implementation, and atomic file operations."
       },
       {
         "id": 4,
@@ -202,8 +225,9 @@
         "testStrategy": "Integration tests simulating user input and automation. Validate prompt logic, dry-run output, and correct exit codes. Test interruption handling.",
         "priority": "high",
         "dependencies": [
-          3,
-          "6"
+          "3",
+          "6",
+          "9"
         ],
         "status": "pending",
         "subtasks": [
@@ -214,7 +238,8 @@
             "dependencies": [],
             "details": "Use the `dialoguer` crate (v0.10+) to render confirmation and selection prompts. Integrate color-coded diff display before each action. Ensure prompt options are handled correctly and user choices are remembered for the session, especially 'all'.",
             "status": "pending",
-            "testStrategy": "Simulate user input for all prompt options. Validate correct rendering of diffs and prompt flow. Test session memory for 'all' choice."
+            "testStrategy": "Simulate user input for all prompt options. Validate correct rendering of diffs and prompt flow. Test session memory for 'all' choice.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -225,7 +250,8 @@
             ],
             "details": "Parse CLI flags to detect non-interactive mode. Automatically confirm all actions when `--yes-all` is set. Ensure no prompts are shown and actions proceed without user intervention.",
             "status": "pending",
-            "testStrategy": "Run automated tests with flags set. Confirm no prompts are displayed and all actions execute as expected."
+            "testStrategy": "Run automated tests with flags set. Confirm no prompts are displayed and all actions execute as expected.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -236,7 +262,8 @@
             ],
             "details": "Detect `--dry-run` flag and modify execution flow to only simulate actions. Output should be clearly marked as a preview, showing intended changes without performing them.",
             "status": "pending",
-            "testStrategy": "Test with `--dry-run` flag. Validate that no changes occur and output is clearly marked as a preview."
+            "testStrategy": "Test with `--dry-run` flag. Validate that no changes occur and output is clearly marked as a preview.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -247,7 +274,8 @@
             ],
             "details": "Implement session state tracking to remember if the user selects 'all' or similar options, ensuring subsequent actions respect this choice until session end.",
             "status": "pending",
-            "testStrategy": "Test session behavior by selecting 'all' and verifying that subsequent items are processed without further prompts."
+            "testStrategy": "Test session behavior by selecting 'all' and verifying that subsequent items are processed without further prompts.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -260,9 +288,13 @@
             ],
             "details": "Use the `ctrlc` crate to intercept Ctrl+C and perform cleanup or exit gracefully. Ensure exit codes reflect success, failure, or interruption for scripting compatibility.",
             "status": "pending",
-            "testStrategy": "Simulate Ctrl+C during operation. Validate graceful shutdown and correct exit codes for all operation modes."
+            "testStrategy": "Simulate Ctrl+C during operation. Validate graceful shutdown and correct exit codes for all operation modes.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Separate into interactive prompt logic, non-interactive automation, dry-run simulation, session state management, and signal/exit handling."
       },
       {
         "id": 5,
@@ -272,7 +304,7 @@
         "testStrategy": "Unit tests for config parsing, merging, and precedence. Test pattern matching with various ignore/include scenarios. Validate error handling for invalid configs.",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
         "status": "done",
         "subtasks": [
@@ -283,7 +315,8 @@
             "dependencies": [],
             "details": "Create a module to search for config files in all supported locations: CLI flag path, .ccsync.local, .ccsync, XDG_CONFIG_HOME/ccsync/config, and ~/.config/ccsync/config. Use the `dirs` crate to handle platform-specific paths. Implement robust error handling for missing or inaccessible files. Return loaded TOML content or appropriate errors.",
             "status": "done",
-            "testStrategy": "Unit tests for file discovery in various locations, including missing files, permission issues, and platform-specific paths. Mock filesystem for testing."
+            "testStrategy": "Unit tests for file discovery in various locations, including missing files, permission issues, and platform-specific paths. Mock filesystem for testing.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -294,7 +327,8 @@
             ],
             "details": "Define Rust structs for configuration with appropriate serde attributes. Use the `toml` and `serde` crates to deserialize config files. Include validation logic to ensure required fields are present and values are within acceptable ranges. Provide detailed error messages for parsing failures, including line numbers and context.",
             "status": "done",
-            "testStrategy": "Unit tests with valid and invalid TOML configurations. Test edge cases like empty files, malformed TOML, and boundary values. Ensure error messages are clear and helpful."
+            "testStrategy": "Unit tests with valid and invalid TOML configurations. Test edge cases like empty files, malformed TOML, and boundary values. Ensure error messages are clear and helpful.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -305,7 +339,8 @@
             ],
             "details": "Create a config merger that respects precedence order: CLI > .ccsync.local > .ccsync > global configs. Implement additive merging for ignore/include patterns (arrays) and override semantics for boolean and scalar values. Handle null/missing values appropriately. Ensure type safety throughout the merging process. Document the merging behavior for each config field type.",
             "status": "done",
-            "testStrategy": "Unit tests with multiple config files having overlapping settings. Verify precedence is correctly applied. Test additive merging for arrays and override behavior for other types."
+            "testStrategy": "Unit tests with multiple config files having overlapping settings. Verify precedence is correctly applied. Test additive merging for arrays and override behavior for other types.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -316,7 +351,8 @@
             ],
             "details": "Integrate the `ignore` crate (v0.4+) to handle gitignore-style patterns. Create a wrapper that converts our config patterns to the format expected by the ignore crate. Support both inclusion and exclusion patterns with proper precedence. Implement caching for pattern matching results to improve performance. Handle edge cases like hidden files and directory traversal.",
             "status": "done",
-            "testStrategy": "Unit tests with various pattern types (glob, exact, negation). Test matching against different file paths, including edge cases. Benchmark performance with large pattern sets."
+            "testStrategy": "Unit tests with various pattern types (glob, exact, negation). Test matching against different file paths, including edge cases. Benchmark performance with large pattern sets.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -328,7 +364,8 @@
             ],
             "details": "Extend the configuration structure to support direction-specific rules (to-local vs to-global). Implement file-type detection (binary, text, symlink) and apply type-specific rules. Create a rule evaluation engine that considers file type, sync direction, and path patterns to determine the appropriate action. Support overrides at different specificity levels.",
             "status": "done",
-            "testStrategy": "Unit tests for direction-specific and type-specific rule application. Test precedence when multiple rules match. Verify correct behavior with different file types and sync directions."
+            "testStrategy": "Unit tests for direction-specific and type-specific rule application. Test precedence when multiple rules match. Verify correct behavior with different file types and sync directions.",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -341,19 +378,23 @@
             ],
             "details": "Create a validation layer that checks the semantic correctness of the merged configuration. Detect and report conflicting or invalid settings. Implement detailed, context-aware error messages with suggestions for fixes. Use color-coded output for errors and warnings. Support different verbosity levels for error reporting. Validate pattern syntax and report specific line numbers for invalid patterns.",
             "status": "done",
-            "testStrategy": "Unit tests with various invalid configurations. Verify error messages are clear and actionable. Test with different verbosity levels. Ensure all validation rules are correctly applied."
+            "testStrategy": "Unit tests with various invalid configurations. Verify error messages are clear and actionable. Test with different verbosity levels. Ensure all validation rules are correctly applied.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 6,
+        "expansionPrompt": "Divide into config file discovery, parsing, precedence merging, pattern matching, direction/type-specific rules, and error reporting."
       },
       {
         "id": 6,
         "title": "Bidirectional Synchronization Logic (to-local and to-global)",
         "description": "Implement core sync logic for `to-local` and `to-global` commands, applying all filters, conflict handling, and configuration rules.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
-          2,
-          3,
-          5
+          "2",
+          "3",
+          "5"
         ],
         "priority": "high",
         "details": "Integrate file scanning, filtering, diffing, and config logic. For each file, determine sync action based on comparison, config, and CLI flags. Apply ignore/include patterns and type filters. Handle symlinks per user settings. Ensure atomic file writes and preserve directory structure. Log all operations with clear, color-coded output. Provide summary statistics after operation. Ensure no data loss and safe failure on conflicts. Interactive confirmations will be added in Task 4. For now, sync operations use config/CLI strategy without prompting.",
@@ -365,8 +406,9 @@
             "description": "Design and implement the high-level orchestration logic that coordinates the entire sync process for both to-local and to-global operations.",
             "dependencies": [],
             "details": "Create a SyncPlanner struct that takes CLI arguments, config, and determines the sync direction. Implement methods to coordinate the overall sync workflow including scanning, filtering, diffing, and action execution. Define clear interfaces between components and ensure proper error propagation. Include logging setup based on verbosity level.",
-            "status": "pending",
-            "testStrategy": "Unit tests for the orchestration logic with mocked dependencies. Integration tests verifying the correct sequence of operations for both sync directions."
+            "status": "done",
+            "testStrategy": "Unit tests for the orchestration logic with mocked dependencies. Integration tests verifying the correct sequence of operations for both sync directions.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -376,8 +418,9 @@
               1
             ],
             "details": "Create a SyncActionResolver that analyzes file comparison results and determines whether to create, update, delete, or skip each file. Incorporate CLI flags like --dry-run and --conflict into decision making. Define a SyncAction enum with variants like Create, Update, Delete, Skip, and Conflict. Include metadata with each action such as file paths, reason for action, and conflict details if applicable.",
-            "status": "pending",
-            "testStrategy": "Unit tests covering all possible file comparison scenarios and configuration combinations. Test each conflict resolution strategy separately."
+            "status": "done",
+            "testStrategy": "Unit tests covering all possible file comparison scenarios and configuration combinations. Test each conflict resolution strategy separately.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -387,8 +430,10 @@
               1
             ],
             "details": "Develop a FilterEngine that combines patterns from .syncignore files, CLI --type flags, and configuration rules. Implement pattern matching for file paths using glob patterns. Support directory-specific filtering rules for agents/, skills/, and commands/. Ensure proper precedence of filter rules with explicit includes overriding excludes. Add detailed logging of filter decisions for debugging.",
-            "status": "pending",
-            "testStrategy": "Unit tests for pattern matching logic. Integration tests with various filter combinations against sample directory structures. Test edge cases like nested ignore patterns."
+            "status": "done",
+            "testStrategy": "Unit tests for pattern matching logic. Integration tests with various filter combinations against sample directory structures. Test edge cases like nested ignore patterns.",
+            "updatedAt": "2025-10-28T10:29:12.457Z",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -398,8 +443,10 @@
               2
             ],
             "details": "Create a ConflictResolver that identifies conflicts when both source and destination files exist with different content. Implement all resolution strategies: fail, overwrite, skip, and newer-wins. Add interactive conflict resolution with user prompts when not in non-interactive mode. Include detailed conflict information in logs and user prompts. Ensure proper handling of timestamp comparison for newer-wins strategy.",
-            "status": "pending",
-            "testStrategy": "Unit tests for each conflict resolution strategy. Integration tests simulating various conflict scenarios. Test interactive and non-interactive modes with mock user input."
+            "status": "done",
+            "testStrategy": "Unit tests for each conflict resolution strategy. Integration tests simulating various conflict scenarios. Test interactive and non-interactive modes with mock user input.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T10:29:14.102Z"
           },
           {
             "id": 5,
@@ -409,8 +456,10 @@
               2
             ],
             "details": "Create a SymlinkHandler that processes symlinks according to the --preserve-symlinks flag and configuration. Implement logic to either copy the target file content or recreate the symlink in the destination. Handle relative vs. absolute symlinks appropriately. Detect and safely handle symlink loops and broken symlinks with proper error messages. Ensure cross-platform compatibility for symlink operations.",
-            "status": "pending",
-            "testStrategy": "Unit tests for symlink resolution logic. Integration tests with various symlink configurations including nested symlinks, relative and absolute paths. Test on multiple platforms if possible."
+            "status": "done",
+            "testStrategy": "Unit tests for symlink resolution logic. Integration tests with various symlink configurations including nested symlinks, relative and absolute paths. Test on multiple platforms if possible.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T10:29:15.767Z"
           },
           {
             "id": 6,
@@ -422,8 +471,9 @@
               5
             ],
             "details": "Develop a FileOperationExecutor that performs create, update, and delete operations atomically. Use temporary files and rename operations to ensure atomicity. Create parent directories as needed. Preserve file permissions and timestamps where appropriate. Implement rollback capability for failed operations. Add detailed logging for each file operation. Handle platform-specific file system constraints. Use the ConflictStrategy from config or CLI flags directly. If a conflict occurs and no strategy is set, default to 'fail' (abort with error). Log all operations but don't prompt for confirmation. Interactive confirmations will be added in Task 4. For now, sync operations use config/CLI strategy without prompting.",
-            "status": "pending",
-            "testStrategy": "Unit tests for atomic operations. Integration tests verifying directory structure preservation. Stress tests with interrupted operations to verify no data loss. Test on different file systems if possible."
+            "status": "done",
+            "testStrategy": "Unit tests for atomic operations. Integration tests verifying directory structure preservation. Stress tests with interrupted operations to verify no data loss. Test on different file systems if possible.",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -433,10 +483,15 @@
               6
             ],
             "details": "Develop a SyncReporter that tracks all operations performed during sync. Generate color-coded, human-readable summaries showing counts of created, updated, deleted, skipped, and conflicted files. Include timing information and error counts. Format output differently based on verbosity level. For dry runs, clearly indicate what would happen without actual changes. Implement machine-readable output option for potential scripting integration.",
-            "status": "pending",
-            "testStrategy": "Unit tests for statistics calculation and formatting. Integration tests verifying correct reporting for various sync scenarios. Visual inspection of color-coded output formats."
+            "status": "done",
+            "testStrategy": "Unit tests for statistics calculation and formatting. Integration tests verifying correct reporting for various sync scenarios. Visual inspection of color-coded output formats.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 7,
+        "expansionPrompt": "Break down into sync planning, action determination, filter application, conflict handling, symlink management, atomic writes, and summary reporting.",
+        "updatedAt": "2025-10-28T10:29:15.767Z"
       },
       {
         "id": 7,
@@ -446,10 +501,13 @@
         "testStrategy": "Unit and integration tests for each command. Validate output accuracy, color coding, and config debugging features. Test with various config and directory setups.",
         "priority": "medium",
         "dependencies": [
-          5
+          "5"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [],
+        "complexity": 5,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Separate into status summary, diff display, config inspection, and output formatting/testing."
       },
       {
         "id": 8,
@@ -459,22 +517,103 @@
         "testStrategy": "Manual and automated tests on all supported platforms. Fuzz test error scenarios. Validate documentation with user testing and feedback.",
         "priority": "medium",
         "dependencies": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [],
+        "complexity": 7,
+        "recommendedSubtasks": 6,
+        "expansionPrompt": "Divide into platform compatibility testing, error handling strategy, atomic file operations, documentation writing, CLI help/man page generation, and user feedback validation."
+      },
+      {
+        "id": 9,
+        "title": "CLI Command Integration for Sync Operations",
+        "description": "Integrate the SyncEngine from the sync module into the CLI command handlers for to-local and to-global operations, converting CLI arguments to Config and SyncDirection, executing sync operations, and displaying results.",
+        "details": "Implement CLI command handlers that connect user input to the sync engine:\n\n1. Create command handlers for both `to-local` and `to-global` operations:\n   - Parse and validate all CLI arguments using `clap`\n   - Convert CLI flags to appropriate `Config` objects\n   - Set the correct `SyncDirection` enum value based on command\n\n2. Integrate with the SyncEngine:\n   - Initialize the SyncEngine with the parsed configuration\n   - Pass the appropriate SyncDirection to the engine\n   - Handle any initialization errors with clear user feedback\n\n3. Implement the SyncReporter for output:\n   - Create a CLI-specific implementation of SyncReporter trait\n   - Use colored output (via the `colored` crate) for different operation types\n   - Display progress during sync operations\n   - Show summary statistics after completion (files synced, conflicts, errors)\n\n4. Handle conflict resolution:\n   - Use the conflict strategy specified in config/CLI\n   - No interactive prompting in this task (that's handled by Task #4)\n   - Ensure clear error messages when conflicts can't be auto-resolved\n\n5. Error handling:\n   - Implement proper error propagation from the sync engine\n   - Convert technical errors to user-friendly messages\n   - Set appropriate exit codes for different error scenarios\n\n6. Code organization:\n   - Create a `cli_handlers.rs` module to contain command implementations\n   - Keep command logic separate from sync engine implementation\n   - Ensure clean separation of concerns between UI and business logic\n\nThe implementation should focus on non-interactive operation, using only configuration-based conflict resolution strategies. Interactive confirmation will be implemented separately in Task #4.",
+        "testStrategy": "1. Unit tests:\n   - Test CLI argument parsing and conversion to Config objects\n   - Verify correct SyncDirection is set based on command\n   - Test error handling for invalid arguments\n\n2. Integration tests:\n   - Create test fixtures with sample global and local directories\n   - Test both to-local and to-global commands with various configurations\n   - Verify correct files are synchronized\n   - Test handling of conflicts with different conflict resolution strategies\n   - Validate correct exit codes for success and various error conditions\n\n3. Mock-based tests:\n   - Create mock SyncEngine to verify correct interaction from CLI\n   - Test SyncReporter implementation for correct output formatting\n   - Verify progress reporting and summary statistics\n\n4. End-to-end tests:\n   - Run complete CLI commands against test directories\n   - Capture and verify console output matches expected format\n   - Test with various config files and CLI argument combinations\n   - Verify correct handling of edge cases (empty directories, permission issues)\n\n5. Cross-platform validation:\n   - Ensure tests pass on all supported platforms\n   - Verify path handling works correctly across operating systems",
+        "status": "pending",
+        "dependencies": [
+          6
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CLI Command Handlers for to-local and to-global",
+            "description": "Create command handler functions for both to-local and to-global operations that parse CLI arguments and convert them to appropriate Config objects.",
+            "dependencies": [],
+            "details": "Create a new module `cli_handlers.rs` with functions for handling to-local and to-global commands. Implement argument parsing using clap, validate all input parameters, and convert CLI flags to Config objects. Set the correct SyncDirection enum value based on the command (ToLocal or ToGlobal). Handle validation errors with clear user feedback. Ensure all required parameters are properly extracted from the CLI arguments.",
+            "status": "pending",
+            "testStrategy": "Unit test the argument parsing and validation logic. Test conversion of CLI flags to Config objects. Verify correct SyncDirection is set based on command. Test error handling for invalid or missing arguments."
+          },
+          {
+            "id": 2,
+            "title": "Integrate SyncEngine with CLI Command Handlers",
+            "description": "Connect the CLI command handlers to the SyncEngine, initializing it with parsed configuration and executing sync operations.",
+            "dependencies": [
+              1
+            ],
+            "details": "Initialize the SyncEngine with the parsed configuration from the CLI handlers. Pass the appropriate SyncDirection to the engine based on the command. Handle any initialization errors with clear user feedback. Implement proper error propagation from the sync engine to the CLI. Set appropriate exit codes for different error scenarios. Ensure clean separation between the CLI layer and the sync engine implementation.",
+            "status": "pending",
+            "testStrategy": "Integration tests with mock SyncEngine to verify correct initialization and parameter passing. Test error handling and propagation. Verify appropriate exit codes are set for different error scenarios."
+          },
+          {
+            "id": 3,
+            "title": "Implement CLI-specific SyncReporter for Output",
+            "description": "Create a CLI implementation of the SyncReporter trait to display sync progress and results to the user.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement a CLI-specific version of the SyncReporter trait that uses the colored crate for output formatting. Display different colors for different operation types (add, modify, delete). Show progress during sync operations with appropriate status messages. Display summary statistics after completion including files synced, conflicts encountered, and any errors. Format output based on verbosity level specified in the config.",
+            "status": "pending",
+            "testStrategy": "Unit test the SyncReporter implementation with various input scenarios. Verify correct output formatting and color usage. Test summary statistics generation with different sync results."
+          },
+          {
+            "id": 4,
+            "title": "Implement Conflict Resolution Handling",
+            "description": "Integrate conflict resolution strategies from configuration into the CLI command flow.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Extract and apply the conflict resolution strategy specified in the config or CLI arguments. Implement non-interactive conflict resolution based on the specified strategy (skip, overwrite, etc.). Ensure clear error messages are displayed when conflicts can't be auto-resolved. Connect the conflict resolution mechanism to the SyncEngine. Handle and report conflict resolution outcomes through the SyncReporter.",
+            "status": "pending",
+            "testStrategy": "Test different conflict resolution strategies with various conflict scenarios. Verify correct behavior for each strategy. Test error handling when conflicts can't be auto-resolved. Integration tests with sample conflicting files."
+          },
+          {
+            "id": 5,
+            "title": "Implement Error Handling and User Feedback",
+            "description": "Create comprehensive error handling for sync operations with user-friendly messages and appropriate exit codes.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Implement proper error propagation from the sync engine to the CLI layer. Convert technical errors to user-friendly messages that provide clear guidance on how to resolve issues. Set appropriate exit codes for different error scenarios. Handle edge cases such as permission errors, missing directories, and network issues. Implement dry-run functionality to show what would happen without making changes. Ensure all error messages are helpful and actionable.",
+            "status": "pending",
+            "testStrategy": "Test error handling with various error scenarios including permission issues, missing files, and sync engine errors. Verify appropriate exit codes and user-friendly messages. Test dry-run functionality to ensure it correctly shows planned actions without making changes."
+          }
+        ]
       }
     ],
     "metadata": {
-      "created": "2025-10-27T13:09:03.870Z",
-      "updated": "2025-10-27T21:02:06.253Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2025-10-28T10:29:15.767Z",
+      "taskCount": 8,
+      "completedCount": 5,
+      "tags": [
+        "master"
+      ],
+      "created": "2025-10-28T11:58:37.793Z",
+      "description": "Tasks for master context",
+      "updated": "2025-10-28T11:58:52.481Z"
     }
   }
 }

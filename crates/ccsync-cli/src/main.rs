@@ -32,8 +32,7 @@ fn main() -> anyhow::Result<()> {
                 .context("Failed to execute diff command")?;
         }
         Commands::Config => {
-            commands::Config::execute(cli.verbose)
-                .context("Failed to execute config command")?;
+            commands::Config::execute(cli.verbose).context("Failed to execute config command")?;
         }
     }
 

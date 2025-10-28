@@ -63,15 +63,13 @@ mod tests {
         let files = scan(&commands_dir).unwrap();
 
         assert_eq!(files.len(), 3);
-        assert!(files
-            .iter()
-            .any(|p| p.file_name().unwrap() == "optimize.md"));
-        assert!(files
-            .iter()
-            .any(|p| p.ends_with("frontend/component.md")));
-        assert!(files
-            .iter()
-            .any(|p| p.ends_with("backend/api/endpoint.md")));
+        assert!(
+            files
+                .iter()
+                .any(|p| p.file_name().unwrap() == "optimize.md")
+        );
+        assert!(files.iter().any(|p| p.ends_with("frontend/component.md")));
+        assert!(files.iter().any(|p| p.ends_with("backend/api/endpoint.md")));
     }
 
     #[test]
@@ -106,8 +104,6 @@ mod tests {
         let files = scan(&commands_dir).unwrap();
 
         assert_eq!(files.len(), 2);
-        assert!(files
-            .iter()
-            .all(|p| p.extension().unwrap() == "md"));
+        assert!(files.iter().all(|p| p.extension().unwrap() == "md"));
     }
 }

@@ -54,12 +54,8 @@ mod tests {
         let files = scan(&agents_dir).unwrap();
 
         assert_eq!(files.len(), 2);
-        assert!(files
-            .iter()
-            .any(|p| p.file_name().unwrap() == "agent1.md"));
-        assert!(files
-            .iter()
-            .any(|p| p.file_name().unwrap() == "agent2.md"));
+        assert!(files.iter().any(|p| p.file_name().unwrap() == "agent1.md"));
+        assert!(files.iter().any(|p| p.file_name().unwrap() == "agent2.md"));
     }
 
     #[test]

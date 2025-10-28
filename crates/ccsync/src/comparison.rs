@@ -15,6 +15,8 @@ mod integration_tests;
 
 use std::path::Path;
 
+use serde::{Deserialize, Serialize};
+
 pub use diff::DiffGenerator;
 pub use hash::FileHasher;
 pub use timestamp::TimestampComparator;
@@ -22,7 +24,8 @@ pub use timestamp::TimestampComparator;
 use crate::error::Result;
 
 /// Conflict resolution strategy
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum ConflictStrategy {
     /// Abort on conflict
     Fail,

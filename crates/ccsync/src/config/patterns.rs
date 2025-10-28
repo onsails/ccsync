@@ -76,11 +76,7 @@ mod tests {
 
     #[test]
     fn test_ignore_pattern() {
-        let matcher = PatternMatcher::with_patterns(
-            &["*.tmp".to_string()],
-            &[],
-        )
-        .unwrap();
+        let matcher = PatternMatcher::with_patterns(&["*.tmp".to_string()], &[]).unwrap();
 
         assert!(!matcher.should_include(&PathBuf::from("file.tmp"), false));
         assert!(matcher.should_include(&PathBuf::from("file.txt"), false));
@@ -88,11 +84,9 @@ mod tests {
 
     #[test]
     fn test_include_overrides_ignore() {
-        let matcher = PatternMatcher::with_patterns(
-            &["*.tmp".to_string()],
-            &["important.tmp".to_string()],
-        )
-        .unwrap();
+        let matcher =
+            PatternMatcher::with_patterns(&["*.tmp".to_string()], &["important.tmp".to_string()])
+                .unwrap();
 
         assert!(!matcher.should_include(&PathBuf::from("file.tmp"), false));
         assert!(matcher.should_include(&PathBuf::from("important.tmp"), false));
@@ -100,11 +94,7 @@ mod tests {
 
     #[test]
     fn test_directory_patterns() {
-        let matcher = PatternMatcher::with_patterns(
-            &["node_modules/".to_string()],
-            &[],
-        )
-        .unwrap();
+        let matcher = PatternMatcher::with_patterns(&["node_modules/".to_string()], &[]).unwrap();
 
         assert!(!matcher.should_include(&PathBuf::from("node_modules"), true));
         assert!(matcher.should_include(&PathBuf::from("src"), true));

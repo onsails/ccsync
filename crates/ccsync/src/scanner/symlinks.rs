@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 
 use crate::error::Result;
 
@@ -87,9 +87,8 @@ impl SymlinkResolver {
             // Canonicalize the current path to detect loops
             let Ok(canonical) = dunce::canonicalize(&current) else {
                 // If canonicalization fails, try to get more context
-                let target = fs::read_link(&current).with_context(|| {
-                    format!("Failed to read symlink {}", current.display())
-                })?;
+                let target = fs::read_link(&current)
+                    .with_context(|| format!("Failed to read symlink {}", current.display()))?;
 
                 // Handle relative symlinks
                 let absolute_target = if target.is_relative() {
@@ -197,10 +196,7 @@ mod tests {
         let result = resolver.resolve(&link);
 
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Broken symlink"));
+        assert!(result.unwrap_err().to_string().contains("Broken symlink"));
     }
 
     #[test]

@@ -7,7 +7,9 @@ fn test_help_output() {
     cmd.arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("Claude Configuration Synchronization Tool"))
+        .stdout(predicate::str::contains(
+            "Claude Configuration Synchronization Tool",
+        ))
         .stdout(predicate::str::contains("to-local"))
         .stdout(predicate::str::contains("to-global"))
         .stdout(predicate::str::contains("status"))
@@ -81,9 +83,7 @@ fn test_verbose_flag() {
 #[test]
 fn test_dry_run_flag() {
     let mut cmd = Command::cargo_bin("ccsync").unwrap();
-    cmd.args(["--dry-run", "status"])
-        .assert()
-        .success();
+    cmd.args(["--dry-run", "status"]).assert().success();
 }
 
 #[test]
