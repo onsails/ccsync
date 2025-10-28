@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Project Setup and CLI Command Structure",
         "description": "Initialize the Rust project, define the CLI structure, and set up command parsing for all required commands and flags.",
         "details": "Use Rust 2021 edition. Scaffold the project with cargo. Use the latest stable version of the `clap` crate (v4.x) for command-line parsing, as it is the industry standard and supports subcommands, flags, and argument validation[4][1][3]. Define subcommands: `to-local`, `to-global`, `status`, `diff`, and `config`. Implement global flags: `--non-interactive`, `--yes-all`, `--dry-run`, `--type`, `--conflict`, `--verbose`, `--global-path`, `--local-path`, `--config`, `--no-config`, and `--preserve-symlinks`. Ensure help and usage output is clear and comprehensive. Structure code using modules for each command for maintainability[2][7].",
@@ -64,7 +64,7 @@
         "expansionPrompt": "Break down project initialization, CLI structure definition, command/flag parsing, and help/error output validation into discrete subtasks."
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "File Scanning, Filtering, and Symlink Resolution",
         "description": "Implement scanning of agents/, skills/, and commands/ directories with directory-specific traversal patterns, applying type filters and resolving symlinks.",
         "status": "done",
@@ -143,7 +143,7 @@
         "expansionPrompt": "Decompose into directory traversal, type filtering, symlink resolution, broken/loop detection, and cross-platform path handling."
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "File Comparison, Diff Generation, and Conflict Detection",
         "description": "Implement efficient file comparison, diff generation, and robust conflict detection logic.",
         "status": "done",
@@ -218,7 +218,7 @@
         "expansionPrompt": "Split into file hashing, timestamp tracking, diff generation, conflict detection, resolution strategy implementation, and atomic file operations."
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Interactive and Non-Interactive Operation Modes",
         "description": "Implement interactive item-by-item confirmation, non-interactive automation, and dry-run preview.",
         "details": "Default to interactive mode using `dialoguer` crate (v0.10+) for prompts. Show color-coded diffs before each action. Support options: yes, no, all, none, diff, quit. Remember 'all' choice for session. Implement `--non-interactive` and `--yes-all` flags to bypass prompts. For `--dry-run`, simulate all actions and clearly mark output as preview. Ensure correct exit codes for scripting. Handle Ctrl+C gracefully using `ctrlc` crate.",
@@ -297,7 +297,7 @@
         "expansionPrompt": "Separate into interactive prompt logic, non-interactive automation, dry-run simulation, session state management, and signal/exit handling."
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Configuration File Parsing, Merging, and Pattern Matching",
         "description": "Implement config file loading from multiple locations, merging with correct precedence, and support for ignore/include patterns.",
         "details": "Use `serde` and `toml` crates for config parsing (TOML is human-readable and widely used in Rust). Support config files at: CLI flag, .ccsync.local, .ccsync, XDG_CONFIG_HOME/ccsync/config, ~/.config/ccsync/config. Merge configs with precedence: CLI > .ccsync.local > .ccsync > global. Implement additive merging for ignore patterns and override for booleans. Use `ignore` crate (v0.4+) for gitignore-style pattern matching. Support direction-specific and type-specific rules. Validate config syntax and provide clear error messages.",
@@ -387,7 +387,7 @@
         "expansionPrompt": "Divide into config file discovery, parsing, precedence merging, pattern matching, direction/type-specific rules, and error reporting."
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Bidirectional Synchronization Logic (to-local and to-global)",
         "description": "Implement core sync logic for `to-local` and `to-global` commands, applying all filters, conflict handling, and configuration rules.",
         "status": "done",
@@ -494,7 +494,7 @@
         "updatedAt": "2025-10-28T10:29:15.767Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Inspection and Debugging Commands (status, diff, config)",
         "description": "Implement read-only inspection commands: `status`, `diff`, and `config` for transparency and debugging.",
         "details": "For `status`, show summary of differences and conflicts by type. For `diff`, display full color-coded diffs for all differing files, respecting config filters. For `config`, display merged config, source of each setting, and test ignore patterns against actual files. Use `colored` crate for output. Ensure no file modifications occur. Provide clear, actionable output for users.",
@@ -510,7 +510,7 @@
         "expansionPrompt": "Separate into status summary, diff display, config inspection, and output formatting/testing."
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Cross-Platform Support, Error Handling, and Documentation",
         "description": "Ensure robust cross-platform compatibility, comprehensive error handling, and provide clear documentation and examples.",
         "details": "Test on Linux, macOS, and Windows. Use `std::path::Path` and `dirs` crate for platform-specific paths. Handle permission errors, missing directories, and symlink loops gracefully. Use Rust's error handling best practices (`anyhow` crate for error context). Provide atomic file operations and secure file writes. Write thorough CLI help, man page, and example config files. Document all commands, flags, and config options. Include installation and usage guides.",
@@ -532,14 +532,14 @@
         "expansionPrompt": "Divide into platform compatibility testing, error handling strategy, atomic file operations, documentation writing, CLI help/man page generation, and user feedback validation."
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "CLI Command Integration for Sync Operations",
         "description": "Integrate the SyncEngine from the sync module into the CLI command handlers for to-local and to-global operations, converting CLI arguments to Config and SyncDirection, executing sync operations, and displaying results.",
         "details": "Implement CLI command handlers that connect user input to the sync engine:\n\n1. Create command handlers for both `to-local` and `to-global` operations:\n   - Parse and validate all CLI arguments using `clap`\n   - Convert CLI flags to appropriate `Config` objects\n   - Set the correct `SyncDirection` enum value based on command\n\n2. Integrate with the SyncEngine:\n   - Initialize the SyncEngine with the parsed configuration\n   - Pass the appropriate SyncDirection to the engine\n   - Handle any initialization errors with clear user feedback\n\n3. Implement the SyncReporter for output:\n   - Create a CLI-specific implementation of SyncReporter trait\n   - Use colored output (via the `colored` crate) for different operation types\n   - Display progress during sync operations\n   - Show summary statistics after completion (files synced, conflicts, errors)\n\n4. Handle conflict resolution:\n   - Use the conflict strategy specified in config/CLI\n   - No interactive prompting in this task (that's handled by Task #4)\n   - Ensure clear error messages when conflicts can't be auto-resolved\n\n5. Error handling:\n   - Implement proper error propagation from the sync engine\n   - Convert technical errors to user-friendly messages\n   - Set appropriate exit codes for different error scenarios\n\n6. Code organization:\n   - Create a `cli_handlers.rs` module to contain command implementations\n   - Keep command logic separate from sync engine implementation\n   - Ensure clean separation of concerns between UI and business logic\n\nThe implementation should focus on non-interactive operation, using only configuration-based conflict resolution strategies. Interactive confirmation will be implemented separately in Task #4.",
         "testStrategy": "1. Unit tests:\n   - Test CLI argument parsing and conversion to Config objects\n   - Verify correct SyncDirection is set based on command\n   - Test error handling for invalid arguments\n\n2. Integration tests:\n   - Create test fixtures with sample global and local directories\n   - Test both to-local and to-global commands with various configurations\n   - Verify correct files are synchronized\n   - Test handling of conflicts with different conflict resolution strategies\n   - Validate correct exit codes for success and various error conditions\n\n3. Mock-based tests:\n   - Create mock SyncEngine to verify correct interaction from CLI\n   - Test SyncReporter implementation for correct output formatting\n   - Verify progress reporting and summary statistics\n\n4. End-to-end tests:\n   - Run complete CLI commands against test directories\n   - Capture and verify console output matches expected format\n   - Test with various config files and CLI argument combinations\n   - Verify correct handling of edge cases (empty directories, permission issues)\n\n5. Cross-platform validation:\n   - Ensure tests pass on all supported platforms\n   - Verify path handling works correctly across operating systems",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
-          6
+          "6"
         ],
         "priority": "high",
         "subtasks": [
@@ -548,9 +548,11 @@
             "title": "Implement CLI Command Handlers for to-local and to-global",
             "description": "Create command handler functions for both to-local and to-global operations that parse CLI arguments and convert them to appropriate Config objects.",
             "dependencies": [],
-            "details": "Create a new module `cli_handlers.rs` with functions for handling to-local and to-global commands. Implement argument parsing using clap, validate all input parameters, and convert CLI flags to Config objects. Set the correct SyncDirection enum value based on the command (ToLocal or ToGlobal). Handle validation errors with clear user feedback. Ensure all required parameters are properly extracted from the CLI arguments.",
-            "status": "pending",
-            "testStrategy": "Unit test the argument parsing and validation logic. Test conversion of CLI flags to Config objects. Verify correct SyncDirection is set based on command. Test error handling for invalid or missing arguments."
+            "details": "Create a new module `cli_handlers.rs` with functions for handling to-local and to-global commands. Implement argument parsing using clap, validate all input parameters, and convert CLI flags to Config objects. Set the correct SyncDirection enum value based on the command (ToLocal or ToGlobal). Handle validation errors with clear user feedback. Ensure all required parameters are properly extracted from the CLI arguments.\n<info added on 2025-10-28T12:23:52.747Z>\nImplemented CLI command handlers in the `cli_handlers.rs` module for both to-local and to-global operations. Created helper functions for path resolution that properly handle relative and absolute paths for both local and global directories. Implemented config builders that convert CLI arguments into properly structured Config objects with appropriate SyncDirection values. Successfully integrated the handlers with the SyncEngine to execute the sync operations based on user input. Added comprehensive error handling with user-friendly error messages. All 19 CLI-related tests now pass, validating the correct behavior of argument parsing, configuration building, and command execution.\n</info added on 2025-10-28T12:23:52.747Z>",
+            "status": "done",
+            "testStrategy": "Unit test the argument parsing and validation logic. Test conversion of CLI flags to Config objects. Verify correct SyncDirection is set based on command. Test error handling for invalid or missing arguments.",
+            "updatedAt": "2025-10-28T12:24:00.554Z",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -560,8 +562,10 @@
               1
             ],
             "details": "Initialize the SyncEngine with the parsed configuration from the CLI handlers. Pass the appropriate SyncDirection to the engine based on the command. Handle any initialization errors with clear user feedback. Implement proper error propagation from the sync engine to the CLI. Set appropriate exit codes for different error scenarios. Ensure clean separation between the CLI layer and the sync engine implementation.",
-            "status": "pending",
-            "testStrategy": "Integration tests with mock SyncEngine to verify correct initialization and parameter passing. Test error handling and propagation. Verify appropriate exit codes are set for different error scenarios."
+            "status": "done",
+            "testStrategy": "Integration tests with mock SyncEngine to verify correct initialization and parameter passing. Test error handling and propagation. Verify appropriate exit codes are set for different error scenarios.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T12:24:00.558Z"
           },
           {
             "id": 3,
@@ -571,8 +575,10 @@
               2
             ],
             "details": "Implement a CLI-specific version of the SyncReporter trait that uses the colored crate for output formatting. Display different colors for different operation types (add, modify, delete). Show progress during sync operations with appropriate status messages. Display summary statistics after completion including files synced, conflicts encountered, and any errors. Format output based on verbosity level specified in the config.",
-            "status": "pending",
-            "testStrategy": "Unit test the SyncReporter implementation with various input scenarios. Verify correct output formatting and color usage. Test summary statistics generation with different sync results."
+            "status": "done",
+            "testStrategy": "Unit test the SyncReporter implementation with various input scenarios. Verify correct output formatting and color usage. Test summary statistics generation with different sync results.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T12:24:00.561Z"
           },
           {
             "id": 4,
@@ -583,8 +589,10 @@
               3
             ],
             "details": "Extract and apply the conflict resolution strategy specified in the config or CLI arguments. Implement non-interactive conflict resolution based on the specified strategy (skip, overwrite, etc.). Ensure clear error messages are displayed when conflicts can't be auto-resolved. Connect the conflict resolution mechanism to the SyncEngine. Handle and report conflict resolution outcomes through the SyncReporter.",
-            "status": "pending",
-            "testStrategy": "Test different conflict resolution strategies with various conflict scenarios. Verify correct behavior for each strategy. Test error handling when conflicts can't be auto-resolved. Integration tests with sample conflicting files."
+            "status": "done",
+            "testStrategy": "Test different conflict resolution strategies with various conflict scenarios. Verify correct behavior for each strategy. Test error handling when conflicts can't be auto-resolved. Integration tests with sample conflicting files.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T12:24:00.563Z"
           },
           {
             "id": 5,
@@ -597,23 +605,23 @@
               4
             ],
             "details": "Implement proper error propagation from the sync engine to the CLI layer. Convert technical errors to user-friendly messages that provide clear guidance on how to resolve issues. Set appropriate exit codes for different error scenarios. Handle edge cases such as permission errors, missing directories, and network issues. Implement dry-run functionality to show what would happen without making changes. Ensure all error messages are helpful and actionable.",
-            "status": "pending",
-            "testStrategy": "Test error handling with various error scenarios including permission issues, missing files, and sync engine errors. Verify appropriate exit codes and user-friendly messages. Test dry-run functionality to ensure it correctly shows planned actions without making changes."
+            "status": "done",
+            "testStrategy": "Test error handling with various error scenarios including permission issues, missing files, and sync engine errors. Verify appropriate exit codes and user-friendly messages. Test dry-run functionality to ensure it correctly shows planned actions without making changes.",
+            "parentId": "undefined",
+            "updatedAt": "2025-10-28T12:24:00.564Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-10-28T12:24:00.564Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-28T10:29:15.767Z",
-      "taskCount": 8,
-      "completedCount": 5,
+      "lastModified": "2025-10-28T12:24:00.564Z",
+      "taskCount": 9,
+      "completedCount": 6,
       "tags": [
         "master"
-      ],
-      "created": "2025-10-28T11:58:37.793Z",
-      "description": "Tasks for master context",
-      "updated": "2025-10-28T11:58:52.481Z"
+      ]
     }
   }
 }
