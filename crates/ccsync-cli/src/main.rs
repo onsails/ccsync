@@ -5,6 +5,7 @@ mod interactive;
 use anyhow::Context;
 use clap::Parser;
 use cli::{Cli, Commands};
+use commands::SyncOptions;
 
 fn main() -> anyhow::Result<()> {
     // Set up Ctrl+C handler for graceful interruption
@@ -22,13 +23,22 @@ fn main() -> anyhow::Result<()> {
         println!("Yes all: {}", cli.yes_all);
     }
 
+    // Create sync options from CLI flags
+    let options = SyncOptions::new(
+        cli.verbose,
+        cli.dry_run,
+        cli.yes_all,
+        cli.config.as_deref(),
+        cli.no_config,
+    );
+
     match &cli.command {
         Commands::ToLocal { types, conflict } => {
-            commands::ToLocal::execute(types, conflict, cli.verbose, cli.dry_run, cli.yes_all)
+            commands::ToLocal::execute(types, conflict, &options)
                 .context("Failed to execute to-local command")?;
         }
         Commands::ToGlobal { types, conflict } => {
-            commands::ToGlobal::execute(types, conflict, cli.verbose, cli.dry_run, cli.yes_all)
+            commands::ToGlobal::execute(types, conflict, &options)
                 .context("Failed to execute to-global command")?;
         }
         Commands::Status { types } => {
