@@ -47,6 +47,8 @@ impl DiffGenerator {
         source_path: &Path,
         dest_path: &Path,
     ) -> String {
+        const DIFF_CONTEXT_LINES: usize = 3;
+
         let diff = TextDiff::from_lines(dest_content, source_content);
 
         let mut output = String::new();
@@ -56,7 +58,7 @@ impl DiffGenerator {
         writeln!(output, "\x1b[1m+++ {}\x1b[0m", source_path.display())
             .expect("Writing to String should never fail");
 
-        for (idx, group) in diff.grouped_ops(3).iter().enumerate() {
+        for (idx, group) in diff.grouped_ops(DIFF_CONTEXT_LINES).iter().enumerate() {
             if idx > 0 {
                 output.push_str("...\n");
             }
