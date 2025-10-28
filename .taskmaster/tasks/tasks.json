@@ -273,7 +273,7 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -281,7 +281,7 @@
             "description": "Implement functionality to discover and load configuration files from multiple locations with proper error handling.",
             "dependencies": [],
             "details": "Create a module to search for config files in all supported locations: CLI flag path, .ccsync.local, .ccsync, XDG_CONFIG_HOME/ccsync/config, and ~/.config/ccsync/config. Use the `dirs` crate to handle platform-specific paths. Implement robust error handling for missing or inaccessible files. Return loaded TOML content or appropriate errors.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for file discovery in various locations, including missing files, permission issues, and platform-specific paths. Mock filesystem for testing."
           },
           {
@@ -292,7 +292,7 @@
               1
             ],
             "details": "Define Rust structs for configuration with appropriate serde attributes. Use the `toml` and `serde` crates to deserialize config files. Include validation logic to ensure required fields are present and values are within acceptable ranges. Provide detailed error messages for parsing failures, including line numbers and context.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with valid and invalid TOML configurations. Test edge cases like empty files, malformed TOML, and boundary values. Ensure error messages are clear and helpful."
           },
           {
@@ -303,7 +303,7 @@
               2
             ],
             "details": "Create a config merger that respects precedence order: CLI > .ccsync.local > .ccsync > global configs. Implement additive merging for ignore/include patterns (arrays) and override semantics for boolean and scalar values. Handle null/missing values appropriately. Ensure type safety throughout the merging process. Document the merging behavior for each config field type.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with multiple config files having overlapping settings. Verify precedence is correctly applied. Test additive merging for arrays and override behavior for other types."
           },
           {
@@ -314,7 +314,7 @@
               3
             ],
             "details": "Integrate the `ignore` crate (v0.4+) to handle gitignore-style patterns. Create a wrapper that converts our config patterns to the format expected by the ignore crate. Support both inclusion and exclusion patterns with proper precedence. Implement caching for pattern matching results to improve performance. Handle edge cases like hidden files and directory traversal.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with various pattern types (glob, exact, negation). Test matching against different file paths, including edge cases. Benchmark performance with large pattern sets."
           },
           {
@@ -326,7 +326,7 @@
               4
             ],
             "details": "Extend the configuration structure to support direction-specific rules (to-local vs to-global). Implement file-type detection (binary, text, symlink) and apply type-specific rules. Create a rule evaluation engine that considers file type, sync direction, and path patterns to determine the appropriate action. Support overrides at different specificity levels.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests for direction-specific and type-specific rule application. Test precedence when multiple rules match. Verify correct behavior with different file types and sync directions."
           },
           {
@@ -339,7 +339,7 @@
               5
             ],
             "details": "Create a validation layer that checks the semantic correctness of the merged configuration. Detect and report conflicting or invalid settings. Implement detailed, context-aware error messages with suggestions for fixes. Use color-coded output for errors and warnings. Support different verbosity levels for error reporting. Validate pattern syntax and report specific line numbers for invalid patterns.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests with various invalid configurations. Verify error messages are clear and actionable. Test with different verbosity levels. Ensure all validation rules are correctly applied."
           }
         ]
@@ -408,7 +408,7 @@
     ],
     "metadata": {
       "created": "2025-10-27T13:09:03.870Z",
-      "updated": "2025-10-27T15:47:18.195Z",
+      "updated": "2025-10-27T21:02:06.253Z",
       "description": "Tasks for master context"
     }
   }
