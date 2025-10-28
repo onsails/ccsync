@@ -8,14 +8,28 @@ use crate::comparison::{ComparisonResult, ConflictStrategy};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SyncAction {
     /// Create new file at destination
-    Create { source: PathBuf, dest: PathBuf },
+    Create {
+        /// Source file path
+        source: PathBuf,
+        /// Destination file path
+        dest: PathBuf,
+    },
     /// Skip this file (no action needed)
-    Skip { path: PathBuf, reason: String },
+    Skip {
+        /// File path being skipped
+        path: PathBuf,
+        /// Reason for skipping
+        reason: String,
+    },
     /// Conflict requiring resolution
     Conflict {
+        /// Source file path
         source: PathBuf,
+        /// Destination file path
         dest: PathBuf,
+        /// Conflict resolution strategy
         strategy: ConflictStrategy,
+        /// Whether source is newer than destination
         source_newer: bool,
     },
 }

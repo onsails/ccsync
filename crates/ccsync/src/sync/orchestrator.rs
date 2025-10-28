@@ -5,12 +5,15 @@ use std::path::Path;
 use anyhow::Context;
 
 use super::SyncResult;
-use super::actions::SyncActionResolver;
+use super::actions::{SyncAction, SyncActionResolver};
 use super::executor::FileOperationExecutor;
 use crate::comparison::{ConflictStrategy, FileComparator};
 use crate::config::{Config, PatternMatcher, SyncDirection};
 use crate::error::Result;
 use crate::scanner::{FileFilter, Scanner};
+
+/// Approval callback for interactive sync operations
+pub type ApprovalCallback = Box<dyn FnMut(&SyncAction) -> Result<bool>>;
 
 /// Main sync engine
 pub struct SyncEngine {
@@ -51,6 +54,23 @@ impl SyncEngine {
     ///
     /// Returns an error if sync fails.
     pub fn sync(&self, source_root: &Path, dest_root: &Path) -> Result<SyncResult> {
+        self.sync_with_approver(source_root, dest_root, None)
+    }
+
+    /// Execute the sync operation with an optional approval callback
+    ///
+    /// The approver callback is called before executing each action.
+    /// It should return Ok(true) to proceed, Ok(false) to skip, or Err to abort.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if sync fails or approver returns an error.
+    pub fn sync_with_approver(
+        &self,
+        source_root: &Path,
+        dest_root: &Path,
+        mut approver: Option<ApprovalCallback>,
+    ) -> Result<SyncResult> {
         let mut result = SyncResult::default();
 
         // Scan source directory
@@ -85,6 +105,25 @@ impl SyncEngine {
 
             // Determine action
             let action = SyncActionResolver::resolve(file.path.clone(), dest_path, &comparison);
+
+            // Check approval if callback provided
+            if let Some(ref mut approve) = approver {
+                match approve(&action) {
+                    Ok(true) => {
+                        // Approved - continue to execution
+                    }
+                    Ok(false) => {
+                        // Skipped by user
+                        result.skipped += 1;
+                        *result.skip_reasons.entry("user skipped".to_string()).or_insert(0) += 1;
+                        continue;
+                    }
+                    Err(e) => {
+                        // User aborted or error in approval
+                        return Err(e);
+                    }
+                }
+            }
 
             // Execute action
             if let Err(e) = executor.execute(&action, &mut result) {

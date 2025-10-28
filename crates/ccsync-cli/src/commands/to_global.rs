@@ -6,6 +6,7 @@ use ccsync::config::{Config, SyncDirection};
 use ccsync::sync::{SyncEngine, SyncReporter};
 
 use crate::cli::{ConfigType, ConflictMode};
+use crate::interactive::InteractivePrompter;
 
 pub struct ToGlobal;
 
@@ -15,6 +16,7 @@ impl ToGlobal {
         conflict: &ConflictMode,
         verbose: bool,
         dry_run: bool,
+        yes_all: bool,
     ) -> anyhow::Result<()> {
         if verbose {
             println!("Executing to-global command");
@@ -39,10 +41,21 @@ impl ToGlobal {
         let engine = SyncEngine::new(config, SyncDirection::ToGlobal)
             .context("Failed to initialize sync engine")?;
 
-        // Execute sync (source is local, destination is global)
-        let result = engine
-            .sync(&local_path, &global_path)
-            .context("Sync operation failed")?;
+        // Execute sync with optional interactive approval (source is local, destination is global)
+        let result = if yes_all || dry_run {
+            // Non-interactive: auto-approve all or just preview
+            engine
+                .sync(&local_path, &global_path)
+                .context("Sync operation failed")?
+        } else {
+            // Interactive mode: prompt for each action
+            let mut prompter = InteractivePrompter::new();
+            engine
+                .sync_with_approver(&local_path, &global_path, Some(Box::new(move |action| {
+                    prompter.prompt(action)
+                })))
+                .context("Sync operation failed")?
+        };
 
         // Display results
         let summary = SyncReporter::generate_summary(&result);

@@ -229,7 +229,7 @@
           "6",
           "9"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -294,7 +294,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 5,
-        "expansionPrompt": "Separate into interactive prompt logic, non-interactive automation, dry-run simulation, session state management, and signal/exit handling."
+        "expansionPrompt": "Separate into interactive prompt logic, non-interactive automation, dry-run simulation, session state management, and signal/exit handling.",
+        "updatedAt": "2025-10-28T15:53:44.354Z"
       },
       {
         "id": "5",
@@ -616,7 +617,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-10-28T12:24:00.564Z",
+      "lastModified": "2025-10-28T15:53:44.354Z",
       "taskCount": 9,
       "completedCount": 6,
       "tags": [
