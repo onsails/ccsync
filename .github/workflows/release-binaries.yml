@@ -62,4 +62,5 @@ jobs:
           target: ${{ matrix.target }}
           tar: all
           zip: windows
+          ref: ${{ github.event.inputs.tag || '' }}
           token: ${{ secrets.GITHUB_TOKEN }}
