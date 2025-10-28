@@ -45,7 +45,7 @@ impl ConfigMerger {
     /// # Errors
     ///
     /// Returns an error if config files cannot be read or parsed.
-    pub fn merge( files: &ConfigFiles) -> Result<Config> {
+    pub fn merge(files: &ConfigFiles) -> Result<Config> {
         let mut merged = Config::default();
 
         // Load and merge in reverse precedence order (lowest to highest)

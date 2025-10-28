@@ -49,13 +49,30 @@ fn test_full_scan_all_directory_types() {
     // Verify each type is found
     assert!(result.files.iter().any(|f| f.path.ends_with("agent1.md")));
     assert!(result.files.iter().any(|f| f.path.ends_with("agent2.md")));
-    assert!(result.files.iter().any(|f| f.path.ends_with("skill-1/SKILL.md")));
-    assert!(result.files.iter().any(|f| f.path.ends_with("skill-2/SKILL.md")));
-    assert!(result.files.iter().any(|f| f.path.ends_with("root-command.md")));
-    assert!(result
-        .files
-        .iter()
-        .any(|f| f.path.ends_with("subdir/nested-command.md")));
+    assert!(
+        result
+            .files
+            .iter()
+            .any(|f| f.path.ends_with("skill-1/SKILL.md"))
+    );
+    assert!(
+        result
+            .files
+            .iter()
+            .any(|f| f.path.ends_with("skill-2/SKILL.md"))
+    );
+    assert!(
+        result
+            .files
+            .iter()
+            .any(|f| f.path.ends_with("root-command.md"))
+    );
+    assert!(
+        result
+            .files
+            .iter()
+            .any(|f| f.path.ends_with("subdir/nested-command.md"))
+    );
 }
 
 #[test]

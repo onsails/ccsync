@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 
 use crate::error::Result;
 
-
 /// Configuration file locations in order of precedence
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConfigFiles {
@@ -38,7 +37,10 @@ impl ConfigDiscovery {
     pub fn discover(cli_path: Option<&Path>) -> Result<ConfigFiles> {
         let cli = if let Some(p) = cli_path {
             if !p.exists() {
-                anyhow::bail!("Config file specified via CLI does not exist: {}", p.display());
+                anyhow::bail!(
+                    "Config file specified via CLI does not exist: {}",
+                    p.display()
+                );
             }
             Some(p.to_path_buf())
         } else {
@@ -68,9 +70,10 @@ impl ConfigDiscovery {
 
             // Use symlink_metadata to avoid following symlinks (security)
             if let Ok(metadata) = candidate.symlink_metadata()
-                && metadata.is_file() {
-                    return Some(candidate);
-                }
+                && metadata.is_file()
+            {
+                return Some(candidate);
+            }
 
             // Move to parent directory
             if !current.pop() {
@@ -90,9 +93,10 @@ impl ConfigDiscovery {
 
         // Use symlink_metadata to avoid following symlinks (security)
         if let Ok(metadata) = global_config.symlink_metadata()
-            && metadata.is_file() {
-                return Some(global_config);
-            }
+            && metadata.is_file()
+        {
+            return Some(global_config);
+        }
 
         None
     }

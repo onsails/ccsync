@@ -26,11 +26,7 @@ pub struct SyncActionResolver;
 impl SyncActionResolver {
     /// Determine sync action from comparison result
     #[must_use]
-    pub fn resolve(
-        source: PathBuf,
-        dest: PathBuf,
-        comparison: &ComparisonResult,
-    ) -> SyncAction {
+    pub fn resolve(source: PathBuf, dest: PathBuf, comparison: &ComparisonResult) -> SyncAction {
         match comparison {
             ComparisonResult::Identical => SyncAction::Skip {
                 path: source,

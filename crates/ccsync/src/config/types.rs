@@ -84,7 +84,6 @@ pub struct Config {
     pub rules: Vec<SyncRule>,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

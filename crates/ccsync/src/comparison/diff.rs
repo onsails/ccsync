@@ -28,10 +28,16 @@ impl DiffGenerator {
         let source_content = fs::read_to_string(source)
             .with_context(|| format!("Failed to read source file: {}", source.display()))?;
 
-        let dest_content = fs::read_to_string(destination)
-            .with_context(|| format!("Failed to read destination file: {}", destination.display()))?;
+        let dest_content = fs::read_to_string(destination).with_context(|| {
+            format!("Failed to read destination file: {}", destination.display())
+        })?;
 
-        Ok(Self::generate_from_content(&source_content, &dest_content, source, destination))
+        Ok(Self::generate_from_content(
+            &source_content,
+            &dest_content,
+            source,
+            destination,
+        ))
     }
 
     /// Generate a diff from string contents
@@ -83,8 +89,9 @@ impl DiffGenerator {
         let source_content = fs::read_to_string(source)
             .with_context(|| format!("Failed to read source file: {}", source.display()))?;
 
-        let dest_content = fs::read_to_string(destination)
-            .with_context(|| format!("Failed to read destination file: {}", destination.display()))?;
+        let dest_content = fs::read_to_string(destination).with_context(|| {
+            format!("Failed to read destination file: {}", destination.display())
+        })?;
 
         let diff = TextDiff::from_lines(&dest_content, &source_content);
         let mut output = String::new();

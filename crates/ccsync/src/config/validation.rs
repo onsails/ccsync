@@ -18,7 +18,7 @@ impl ConfigValidator {
     /// # Errors
     ///
     /// Returns an error if the configuration is invalid.
-    pub fn validate( config: &Config) -> Result<()> {
+    pub fn validate(config: &Config) -> Result<()> {
         // Check for conflicting settings
         if config.follow_symlinks == Some(true) && config.preserve_symlinks == Some(true) {
             anyhow::bail!(
@@ -79,10 +79,12 @@ mod tests {
         let result = ConfigValidator::validate(&config);
 
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("follow_symlinks and preserve_symlinks"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("follow_symlinks and preserve_symlinks")
+        );
     }
 
     #[test]

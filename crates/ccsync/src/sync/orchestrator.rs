@@ -4,9 +4,9 @@ use std::path::Path;
 
 use anyhow::Context;
 
+use super::SyncResult;
 use super::actions::SyncActionResolver;
 use super::executor::FileOperationExecutor;
-use super::SyncResult;
 use crate::comparison::{ConflictStrategy, FileComparator};
 use crate::config::{Config, PatternMatcher, SyncDirection};
 use crate::error::Result;
@@ -66,10 +66,11 @@ impl SyncEngine {
             // Apply pattern filter
             let is_dir = file.path.is_dir();
             if let Some(ref matcher) = self.pattern_matcher
-                && !matcher.should_include(&file.path, is_dir) {
-                    result.skipped += 1;
-                    continue;
-                }
+                && !matcher.should_include(&file.path, is_dir)
+            {
+                result.skipped += 1;
+                continue;
+            }
 
             // Get relative path
             let rel_path = file
@@ -80,18 +81,10 @@ impl SyncEngine {
             let dest_path = dest_root.join(rel_path);
 
             // Compare files
-            let comparison = FileComparator::compare(
-                &file.path,
-                &dest_path,
-                conflict_strategy,
-            )?;
+            let comparison = FileComparator::compare(&file.path, &dest_path, conflict_strategy)?;
 
             // Determine action
-            let action = SyncActionResolver::resolve(
-                file.path.clone(),
-                dest_path,
-                &comparison,
-            );
+            let action = SyncActionResolver::resolve(file.path.clone(), dest_path, &comparison);
 
             // Execute action
             if let Err(e) = executor.execute(&action, &mut result) {

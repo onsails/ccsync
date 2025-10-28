@@ -45,10 +45,7 @@ impl TimestampComparator {
     /// # Errors
     ///
     /// Returns an error if file metadata cannot be read.
-    pub fn compare_times(
-        source: &Path,
-        destination: &Path,
-    ) -> Result<std::cmp::Ordering> {
+    pub fn compare_times(source: &Path, destination: &Path) -> Result<std::cmp::Ordering> {
         let source_time = Self::get_modified_time(source)?;
         let dest_time = Self::get_modified_time(destination)?;
 
@@ -82,7 +79,10 @@ mod tests {
         // On others, copy creates a newer file (Less, because file1 < file2)
         // We verify both files exist and comparison works without panicking
         assert!(
-            matches!(ordering, std::cmp::Ordering::Equal | std::cmp::Ordering::Less),
+            matches!(
+                ordering,
+                std::cmp::Ordering::Equal | std::cmp::Ordering::Less
+            ),
             "Expected Equal or Less for copied file timestamps, got {:?}",
             ordering
         );

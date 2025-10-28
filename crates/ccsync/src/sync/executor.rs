@@ -5,8 +5,8 @@ use std::path::Path;
 
 use anyhow::Context;
 
-use super::actions::SyncAction;
 use super::SyncResult;
+use super::actions::SyncAction;
 use crate::comparison::ConflictStrategy;
 use crate::error::Result;
 
@@ -96,10 +96,7 @@ impl FileOperationExecutor {
                     result.updated += 1;
                 } else {
                     if self.dry_run {
-                        eprintln!(
-                            "[DRY RUN] Would skip (dest newer): {}",
-                            dest.display()
-                        );
+                        eprintln!("[DRY RUN] Would skip (dest newer): {}", dest.display());
                     }
                     result.skipped += 1;
                 }
@@ -118,11 +115,7 @@ impl FileOperationExecutor {
 
         // Copy file
         fs::copy(source, dest).with_context(|| {
-            format!(
-                "Failed to copy {} to {}",
-                source.display(),
-                dest.display()
-            )
+            format!("Failed to copy {} to {}", source.display(), dest.display())
         })?;
 
         Ok(())
