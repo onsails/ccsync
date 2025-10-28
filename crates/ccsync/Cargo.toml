@@ -14,7 +14,7 @@ name = "ccsync"
 path = "src/main.rs"
 
 [dependencies]
-ccsync-core = { version = "0.1.3", path = "../ccsync-core" }
+ccsync-core = { version = "0.1.4", path = "../ccsync-core" }
 clap.workspace = true
 anyhow.workspace = true
 dialoguer.workspace = true
