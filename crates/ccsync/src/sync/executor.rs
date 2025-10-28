@@ -32,20 +32,18 @@ impl FileOperationExecutor {
             SyncAction::Create { source, dest } => {
                 if self.dry_run {
                     println!("[DRY RUN] Would create: {}", dest.display());
-                    result.created += 1;
                 } else {
-                    self.copy_file(source, dest)?;
-                    result.created += 1;
+                    Self::copy_file(source, dest)?;
                 }
+                result.created += 1;
             }
             SyncAction::Update { source, dest } => {
                 if self.dry_run {
                     println!("[DRY RUN] Would update: {}", dest.display());
-                    result.updated += 1;
                 } else {
-                    self.copy_file(source, dest)?;
-                    result.updated += 1;
+                    Self::copy_file(source, dest)?;
                 }
+                result.updated += 1;
             }
             SyncAction::Skip { path, reason } => {
                 if self.dry_run {
@@ -86,7 +84,7 @@ impl FileOperationExecutor {
                 if self.dry_run {
                     println!("[DRY RUN] Would overwrite: {}", dest.display());
                 } else {
-                    self.copy_file(source, dest)?;
+                    Self::copy_file(source, dest)?;
                 }
                 result.updated += 1;
             }
@@ -101,7 +99,7 @@ impl FileOperationExecutor {
                     if self.dry_run {
                         println!("[DRY RUN] Would update (source newer): {}", dest.display());
                     } else {
-                        self.copy_file(source, dest)?;
+                        Self::copy_file(source, dest)?;
                     }
                     result.updated += 1;
                 } else {
@@ -119,7 +117,7 @@ impl FileOperationExecutor {
     }
 
     /// Copy file atomically
-    fn copy_file(&self, source: &Path, dest: &Path) -> Result<()> {
+    fn copy_file(source: &Path, dest: &Path) -> Result<()> {
         // Create parent directory if needed
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)

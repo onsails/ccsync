@@ -81,7 +81,7 @@ impl SyncEngine {
             let comparison = FileComparator::compare(
                 &file.path,
                 &dest_path,
-                self.get_conflict_strategy(),
+                Self::get_conflict_strategy(),
             )?;
 
             // Determine action
@@ -89,7 +89,7 @@ impl SyncEngine {
                 file.path.clone(),
                 dest_path,
                 &comparison,
-                self.get_conflict_strategy(),
+                Self::get_conflict_strategy(),
             );
 
             // Execute action
@@ -107,7 +107,7 @@ impl SyncEngine {
     }
 
     /// Get conflict strategy from config or use default
-    const fn get_conflict_strategy(&self) -> ConflictStrategy {
+    const fn get_conflict_strategy() -> ConflictStrategy {
         // Default to Fail if not specified
         ConflictStrategy::Fail
     }
