@@ -50,13 +50,23 @@ impl ToLocal {
         } else {
             // Interactive mode: prompt for each action
             let mut prompter = InteractivePrompter::new();
-            engine
-                .sync_with_approver(
-                    &global_path,
-                    &local_path,
-                    Some(Box::new(move |action| prompter.prompt(action))),
-                )
-                .context("Sync operation failed")?
+            match engine.sync_with_approver(
+                &global_path,
+                &local_path,
+                Some(Box::new(move |action| prompter.prompt(action))),
+            ) {
+                Ok(result) => result,
+                Err(e) => {
+                    // Check if this is a user abort (not a real error)
+                    let err_msg = e.to_string();
+                    if err_msg.contains("User aborted") {
+                        eprintln!("\nSync cancelled by user.");
+                        std::process::exit(0); // Clean exit, not an error
+                    } else {
+                        return Err(e).context("Sync operation failed");
+                    }
+                }
+            }
         };
 
         // Display results
