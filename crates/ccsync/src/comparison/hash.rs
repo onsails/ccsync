@@ -15,6 +15,12 @@ pub type FileHash = [u8; 32];
 /// File hasher
 pub struct FileHasher;
 
+impl Default for FileHasher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileHasher {
     /// Create a new file hasher
     #[must_use]

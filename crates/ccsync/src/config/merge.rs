@@ -27,6 +27,12 @@ use crate::error::Result;
 /// Configuration merger
 pub struct ConfigMerger;
 
+impl Default for ConfigMerger {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigMerger {
     /// Create a new config merger
     #[must_use]

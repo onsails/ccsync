@@ -1,9 +1,15 @@
+use std::path::PathBuf;
+
+use anyhow::Context;
+use ccsync::comparison::ConflictStrategy;
+use ccsync::config::{Config, SyncDirection};
+use ccsync::sync::{SyncEngine, SyncReporter};
+
 use crate::cli::{ConfigType, ConflictMode};
 
 pub struct ToLocal;
 
 impl ToLocal {
-    #[allow(clippy::unnecessary_wraps)]
     pub fn execute(
         types: &[ConfigType],
         conflict: &ConflictMode,
@@ -17,7 +23,94 @@ impl ToLocal {
             println!("Dry run: {dry_run}");
         }
 
-        println!("to-local: Not yet implemented");
+        // Determine paths
+        let global_path = Self::get_global_path()?;
+        let local_path = Self::get_local_path()?;
+
+        if verbose {
+            println!("Global path: {}", global_path.display());
+            println!("Local path: {}", local_path.display());
+        }
+
+        // Build configuration
+        let config = Self::build_config(types, conflict, dry_run, verbose);
+
+        // Initialize sync engine
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal)
+            .context("Failed to initialize sync engine")?;
+
+        // Execute sync
+        let result = engine
+            .sync(&global_path, &local_path)
+            .context("Sync operation failed")?;
+
+        // Display results
+        let summary = SyncReporter::generate_summary(&result);
+        println!("{summary}");
+
         Ok(())
+    }
+
+    fn get_global_path() -> anyhow::Result<PathBuf> {
+        let home = std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .context("Failed to determine home directory")?;
+        Ok(PathBuf::from(home).join(".claude"))
+    }
+
+    fn get_local_path() -> anyhow::Result<PathBuf> {
+        let current_dir = std::env::current_dir().context("Failed to get current directory")?;
+        Ok(current_dir.join(".claude"))
+    }
+
+    fn build_config(
+        types: &[ConfigType],
+        conflict: &ConflictMode,
+        dry_run: bool,
+        _verbose: bool,
+    ) -> Config {
+        let mut config = Config::default();
+
+        // Set dry run flag
+        if dry_run {
+            config.dry_run = Some(true);
+        }
+
+        // Set conflict strategy
+        config.conflict_strategy = Some(Self::convert_conflict_mode(conflict));
+
+        // Handle type filters
+        if !types.is_empty() {
+            config.include = Self::build_type_patterns(types);
+        }
+
+        config
+    }
+
+    const fn convert_conflict_mode(mode: &ConflictMode) -> ConflictStrategy {
+        match mode {
+            ConflictMode::Fail => ConflictStrategy::Fail,
+            ConflictMode::Overwrite => ConflictStrategy::Overwrite,
+            ConflictMode::Skip => ConflictStrategy::Skip,
+            ConflictMode::Newer => ConflictStrategy::Newer,
+        }
+    }
+
+    fn build_type_patterns(types: &[ConfigType]) -> Vec<String> {
+        let mut patterns = Vec::new();
+
+        for config_type in types {
+            match config_type {
+                ConfigType::Agents => patterns.push("agents/**".to_string()),
+                ConfigType::Skills => patterns.push("skills/**".to_string()),
+                ConfigType::Commands => patterns.push("commands/**".to_string()),
+                ConfigType::All => {
+                    patterns.push("**".to_string());
+                    break;
+                }
+            }
+        }
+
+        patterns
     }
 }

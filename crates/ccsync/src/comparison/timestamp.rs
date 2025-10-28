@@ -11,6 +11,12 @@ use crate::error::Result;
 /// Timestamp comparator
 pub struct TimestampComparator;
 
+impl Default for TimestampComparator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TimestampComparator {
     /// Create a new timestamp comparator
     #[must_use]
@@ -31,6 +37,10 @@ impl TimestampComparator {
     }
 
     /// Get the modification time of a file
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if file metadata cannot be read.
     pub fn get_modified_time(path: &Path) -> Result<SystemTime> {
         let metadata = fs::metadata(path)
             .with_context(|| format!("Failed to read metadata for: {}", path.display()))?;
