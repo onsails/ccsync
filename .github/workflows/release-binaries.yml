@@ -60,7 +60,9 @@ jobs:
           bin: ccsync
           manifest-path: crates/ccsync/Cargo.toml
           target: ${{ matrix.target }}
-          tar: none
-          zip: none
+          # Note: The action requires at least one archive format
+          # tar: unix, zip: windows is the minimal setup
+          tar: unix
+          zip: windows
           ref: ${{ github.event.inputs.tag && format('refs/tags/ccsync-{0}', github.event.inputs.tag) || '' }}
           token: ${{ secrets.GITHUB_TOKEN }}
