@@ -30,11 +30,11 @@ pub struct Cli {
     pub local_path: Option<PathBuf>,
 
     /// Use specific config file
-    #[arg(long, global = true, value_name = "PATH")]
+    #[arg(long, global = true, value_name = "PATH", conflicts_with = "no_config")]
     pub config: Option<PathBuf>,
 
     /// Ignore all config files
-    #[arg(long, global = true)]
+    #[arg(long, global = true, conflicts_with = "config")]
     pub no_config: bool,
 
     /// Preserve symlinks instead of following them

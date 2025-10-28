@@ -1,5 +1,7 @@
 //! Common types and utilities for command execution
 
+use ccsync::config::{Config, ConfigManager};
+
 /// Execution options for sync commands
 #[allow(clippy::struct_excessive_bools)]
 pub struct SyncOptions<'a> {
@@ -32,6 +34,37 @@ impl<'a> SyncOptions<'a> {
             yes_all,
             config_path,
             no_config,
+        }
+    }
+
+    /// Load configuration from files or use defaults
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if config file is explicitly specified but cannot be loaded.
+    pub fn load_config(&self) -> anyhow::Result<Config> {
+        if self.no_config {
+            if self.verbose {
+                println!("Skipping config file loading (--no-config)");
+            }
+            return Ok(Config::default());
+        }
+
+        match ConfigManager::load(self.config_path) {
+            Ok(config) => Ok(config),
+            Err(e) => {
+                // If user explicitly specified a config file, fail hard
+                if self.config_path.is_some() {
+                    anyhow::bail!("Failed to load config file: {e}");
+                }
+
+                // Otherwise, warn and use defaults
+                if self.verbose {
+                    eprintln!("Warning: Failed to load config files: {e}");
+                    eprintln!("Using default configuration");
+                }
+                Ok(Config::default())
+            }
         }
     }
 }

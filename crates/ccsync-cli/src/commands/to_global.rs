@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use ccsync::comparison::ConflictStrategy;
-use ccsync::config::{Config, ConfigManager, SyncDirection};
+use ccsync::config::{Config, SyncDirection};
 use ccsync::sync::{SyncEngine, SyncReporter};
 
 use crate::cli::{ConfigType, ConflictMode};
@@ -33,21 +33,8 @@ impl ToGlobal {
             println!("Global path: {}", global_path.display());
         }
 
-        // Load configuration from files (unless --no-config)
-        let mut config = if options.no_config {
-            if options.verbose {
-                println!("Skipping config file loading (--no-config)");
-            }
-            Config::default()
-        } else {
-            ConfigManager::load(options.config_path).unwrap_or_else(|e| {
-                if options.verbose {
-                    eprintln!("Warning: Failed to load config files: {e}");
-                    eprintln!("Using default configuration");
-                }
-                Config::default()
-            })
-        };
+        // Load configuration from files
+        let mut config = options.load_config()?;
 
         // Merge CLI flags into loaded config (CLI takes precedence)
         Self::merge_cli_flags(&mut config, types, conflict, options.dry_run);
@@ -111,17 +98,18 @@ impl ToGlobal {
     ) {
         // CLI flags override config file settings
 
-        // Set dry run flag
+        // Set dry run flag (override config)
         if dry_run {
             config.dry_run = Some(true);
         }
 
-        // Set conflict strategy
+        // Set conflict strategy (override config)
         config.conflict_strategy = Some(Self::convert_conflict_mode(conflict));
 
-        // Handle type filters (CLI patterns override config patterns)
+        // Handle type filters - ADD to config patterns (additive, not replace)
         if !types.is_empty() {
-            config.include = Self::build_type_patterns(types);
+            let cli_patterns = Self::build_type_patterns(types);
+            config.include.extend(cli_patterns);
         }
     }
 
