@@ -47,7 +47,10 @@ target/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# Local config overrides (user-specific, not committed)
+.ccsync.local 
 
 # Devenv
 .devenv*

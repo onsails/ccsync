@@ -101,6 +101,36 @@ Press **q** or **Ctrl+C** to cancel anytime.
 - **Skills** in `~/.claude/skills/` ↔ `./.claude/skills/`
 - **Commands** in `~/.claude/commands/` ↔ `./.claude/commands/`
 
+## Configuration Files
+
+Create a `.ccsync` file in your project to customize sync behavior:
+
+```toml
+# Ignore certain files (gitignore-style patterns)
+ignore = ["**/test-*.md", "**/*.backup"]
+
+# Only sync specific patterns
+include = ["agents/**", "skills/**"]
+
+# Set default conflict strategy
+conflict_strategy = "newer"
+```
+
+**Config file locations** (in order of precedence):
+1. `--config <path>` - Custom config file via flag
+2. `.ccsync.local` - Project-local (gitignored, for personal settings)
+3. `.ccsync` - Project config (committed to repo)
+4. `~/.config/ccsync/config.toml` - Global config
+
+**CLI flags always override config files.**
+
+### Skip config files
+
+```bash
+# Ignore all config files, use only CLI flags
+ccsync to-local --no-config
+```
+
 ## Examples
 
 ### Check Before Syncing

@@ -6,6 +6,7 @@ use ccsync::config::{Config, SyncDirection};
 use ccsync::sync::{SyncEngine, SyncReporter};
 
 use crate::cli::{ConfigType, ConflictMode};
+use crate::commands::SyncOptions;
 use crate::interactive::InteractivePrompter;
 
 pub struct ToLocal;
@@ -14,35 +15,36 @@ impl ToLocal {
     pub fn execute(
         types: &[ConfigType],
         conflict: &ConflictMode,
-        verbose: bool,
-        dry_run: bool,
-        yes_all: bool,
+        options: &SyncOptions,
     ) -> anyhow::Result<()> {
-        if verbose {
+        if options.verbose {
             println!("Executing to-local command");
             println!("Types: {types:?}");
             println!("Conflict mode: {conflict:?}");
-            println!("Dry run: {dry_run}");
+            println!("Dry run: {}", options.dry_run);
         }
 
         // Determine paths
         let global_path = Self::get_global_path()?;
         let local_path = Self::get_local_path()?;
 
-        if verbose {
+        if options.verbose {
             println!("Global path: {}", global_path.display());
             println!("Local path: {}", local_path.display());
         }
 
-        // Build configuration
-        let config = Self::build_config(types, conflict, dry_run, verbose);
+        // Load configuration from files
+        let mut config = options.load_config()?;
+
+        // Merge CLI flags into loaded config (CLI takes precedence)
+        Self::merge_cli_flags(&mut config, types, conflict, options.dry_run);
 
         // Initialize sync engine
         let engine = SyncEngine::new(config, SyncDirection::ToLocal)
             .context("Failed to initialize sync engine")?;
 
         // Execute sync with optional interactive approval
-        let result = if yes_all || dry_run {
+        let result = if options.yes_all || options.dry_run {
             // Non-interactive: auto-approve all or just preview
             engine
                 .sync(&global_path, &local_path)
@@ -88,28 +90,27 @@ impl ToLocal {
         Ok(current_dir.join(".claude"))
     }
 
-    fn build_config(
+    fn merge_cli_flags(
+        config: &mut Config,
         types: &[ConfigType],
         conflict: &ConflictMode,
         dry_run: bool,
-        _verbose: bool,
-    ) -> Config {
-        let mut config = Config::default();
+    ) {
+        // CLI flags override config file settings
 
-        // Set dry run flag
+        // Set dry run flag (override config)
         if dry_run {
             config.dry_run = Some(true);
         }
 
-        // Set conflict strategy
+        // Set conflict strategy (override config)
         config.conflict_strategy = Some(Self::convert_conflict_mode(conflict));
 
-        // Handle type filters
+        // Handle type filters - ADD to config patterns (additive, not replace)
         if !types.is_empty() {
-            config.include = Self::build_type_patterns(types);
+            let cli_patterns = Self::build_type_patterns(types);
+            config.include.extend(cli_patterns);
         }
-
-        config
     }
 
     const fn convert_conflict_mode(mode: &ConflictMode) -> ConflictStrategy {
