@@ -1,5 +1,7 @@
 //! Sync operation reporting and statistics
 
+use std::fmt::Write;
+
 use super::SyncResult;
 
 /// Sync operation reporter
@@ -18,23 +20,20 @@ impl SyncReporter {
         let mut output = String::new();
 
         output.push_str("\n=== Sync Summary ===\n");
-        output.push_str(&format!("Created:  {}\n", result.created));
-        output.push_str(&format!("Updated:  {}\n", result.updated));
-        output.push_str(&format!("Deleted:  {}\n", result.deleted));
-        output.push_str(&format!("Skipped:  {}\n", result.skipped));
-        output.push_str(&format!("Conflicts: {}\n", result.conflicts));
+        let _ = writeln!(output, "Created:  {}", result.created);
+        let _ = writeln!(output, "Updated:  {}", result.updated);
+        let _ = writeln!(output, "Deleted:  {}", result.deleted);
+        let _ = writeln!(output, "Skipped:  {}", result.skipped);
+        let _ = writeln!(output, "Conflicts: {}", result.conflicts);
 
         if !result.errors.is_empty() {
-            output.push_str(&format!("\nErrors ({}):\n", result.errors.len()));
+            let _ = writeln!(output, "\nErrors ({}):", result.errors.len());
             for error in &result.errors {
-                output.push_str(&format!("  - {error}\n"));
+                let _ = writeln!(output, "  - {error}");
             }
         }
 
-        output.push_str(&format!(
-            "\nTotal operations: {}\n",
-            result.total_operations()
-        ));
+        let _ = writeln!(output, "\nTotal operations: {}", result.total_operations());
 
         if result.is_success() {
             output.push_str("Status: ✓ Success\n");
