@@ -1,9 +1,9 @@
 //! Interactive prompting for sync operations
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use ccsync::comparison::FileComparator;
 use ccsync::sync::SyncAction;
-use dialoguer::Select;
+use dialoguer::Input;
 
 /// User's choice for a sync action
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,24 +98,30 @@ impl InteractivePrompter {
 
     /// Show the selection prompt
     fn show_prompt() -> Result<UserChoice> {
-        let items = ["yes", "no", "all", "none", "diff", "quit"];
+        loop {
+            let input: String = Input::new()
+                .with_prompt("Proceed? [y/n/a/s/d/q] (yes/no/all/skip-all/diff/quit)")
+                .interact_text()
+                .context("Failed to show prompt")?;
 
-        let selection = Select::new()
-            .with_prompt("Proceed?")
-            .items(&items)
-            .default(0)
-            .interact()
-            .context("Failed to show prompt")?;
-
-        Ok(match selection {
-            0 => UserChoice::Yes,
-            1 => UserChoice::No,
-            2 => UserChoice::All,
-            3 => UserChoice::None,
-            4 => UserChoice::Diff,
-            5 => UserChoice::Quit,
-            _ => unreachable!(),
-        })
+            let choice = input.trim().to_lowercase();
+            match choice.as_str() {
+                "y" | "yes" => return Ok(UserChoice::Yes),
+                "n" | "no" => return Ok(UserChoice::No),
+                "a" | "all" => return Ok(UserChoice::All),
+                "s" | "none" | "skip" | "skip-all" => return Ok(UserChoice::None),
+                "d" | "diff" => return Ok(UserChoice::Diff),
+                "q" | "quit" | "exit" => return Ok(UserChoice::Quit),
+                "" => {
+                    // Default to no on empty input
+                    return Ok(UserChoice::No);
+                }
+                _ => {
+                    eprintln!("Invalid choice. Please enter y/n/a/s/d/q or the full word.");
+                    // Loop to re-prompt
+                }
+            }
+        }
     }
 
     /// Describe the action in user-friendly terms
