@@ -114,9 +114,6 @@ include = ["agents/**", "skills/**"]
 
 # Set default conflict strategy
 conflict_strategy = "newer"
-
-# Enable dry-run by default
-dry_run = false
 ```
 
 **Config file locations** (in order of precedence):
