@@ -4,13 +4,21 @@ Sync your Claude Code agents, skills, and commands between global and project co
 
 Keep your Claude Code setup consistent across projects while maintaining project-specific customizations.
 
-## Installation
+## 📦 Installation
+
+### Via Cargo
 
 ```bash
 cargo install ccsync
 ```
 
-## Quick Start
+### Via Homebrew
+
+```bash
+brew install onsails/homebrew-core/ccsync --build-from-source
+```
+
+## 🚀 Quick Start
 
 ```bash
 # Sync your global Claude settings to current project
@@ -38,7 +46,7 @@ ccsync to-local --yes-all
 ccsync to-local --dry-run
 ```
 
-## Common Tasks
+## 📝 Common Tasks
 
 ### Sync Specific Types
 
@@ -71,7 +79,7 @@ ccsync to-local --conflict=skip
 ccsync to-local --conflict=newer
 ```
 
-## How It Works
+## 💡 How It Works
 
 By default, `ccsync` asks you to approve each file before syncing:
 
@@ -88,13 +96,13 @@ Press **a** to approve all remaining files (no more prompts).
 
 Press **q** or **Ctrl+C** to cancel anytime.
 
-## What Gets Synced
+## 📂 What Gets Synced
 
 - **Agents** in `~/.claude/agents/` ↔ `./.claude/agents/`
 - **Skills** in `~/.claude/skills/` ↔ `./.claude/skills/`
 - **Commands** in `~/.claude/commands/` ↔ `./.claude/commands/`
 
-## Configuration Files
+## ⚙️ Configuration Files
 
 Create a `.ccsync` file in your project to customize sync behavior:
 
@@ -124,7 +132,7 @@ conflict_strategy = "newer"
 ccsync to-local --no-config
 ```
 
-## Examples
+## 💻 Examples
 
 ### Check Before Syncing
 
@@ -147,7 +155,7 @@ ccsync to-local --type=agents --yes-all
 ccsync to-local --conflict=newer --yes-all
 ```
 
-## FAQ
+## ❓ FAQ
 
 **Q: What happens if I press 'y' on a conflict?**
 A: The source file will overwrite the destination (or follow your `--conflict` strategy).
@@ -162,6 +170,6 @@ A: You'll see `Skipped: N (identical content: N)` - no operations performed.
 A: Use `ccsync to-local --yes-all` to skip all prompts.
 
 
-## License
+## 📄 License
 
 MIT
