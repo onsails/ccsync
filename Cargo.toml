@@ -16,6 +16,8 @@ repository = "https://github.com/onsails/ccsync"
 # Core dependencies with tilde requirements for patch compatibility
 clap = { version = "~4.5.28", features = ["derive", "cargo"] }
 anyhow = "~1.0.95"
+dialoguer = "~0.11.0"
+ctrlc = "~3.4.7"
 
 # Dev dependencies
 assert_cmd = "~2.0.17"

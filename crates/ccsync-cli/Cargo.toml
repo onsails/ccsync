@@ -17,8 +17,8 @@ path = "src/main.rs"
 ccsync = { path = "../ccsync" }
 clap.workspace = true
 anyhow.workspace = true
-dialoguer = "0.11"
-ctrlc = "3.5"
+dialoguer.workspace = true
+ctrlc.workspace = true
 
 [dev-dependencies]
 assert_cmd.workspace = true

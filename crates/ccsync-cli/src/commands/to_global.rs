@@ -51,9 +51,11 @@ impl ToGlobal {
             // Interactive mode: prompt for each action
             let mut prompter = InteractivePrompter::new();
             engine
-                .sync_with_approver(&local_path, &global_path, Some(Box::new(move |action| {
-                    prompter.prompt(action)
-                })))
+                .sync_with_approver(
+                    &local_path,
+                    &global_path,
+                    Some(Box::new(move |action| prompter.prompt(action))),
+                )
                 .context("Sync operation failed")?
         };
 

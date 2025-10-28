@@ -106,7 +106,16 @@ impl SyncEngine {
             // Determine action
             let action = SyncActionResolver::resolve(file.path.clone(), dest_path, &comparison);
 
-            // Check approval if callback provided
+            // Skip actions don't need approval (they're automatic decisions)
+            if matches!(action, super::actions::SyncAction::Skip { .. }) {
+                if let Err(e) = executor.execute(&action, &mut result) {
+                    eprintln!("Error: {e}");
+                    result.errors.push(e.to_string());
+                }
+                continue;
+            }
+
+            // Check approval if callback provided (only for Create and Conflict actions)
             if let Some(ref mut approve) = approver {
                 match approve(&action) {
                     Ok(true) => {
@@ -115,7 +124,10 @@ impl SyncEngine {
                     Ok(false) => {
                         // Skipped by user
                         result.skipped += 1;
-                        *result.skip_reasons.entry("user skipped".to_string()).or_insert(0) += 1;
+                        *result
+                            .skip_reasons
+                            .entry("user skipped".to_string())
+                            .or_insert(0) += 1;
                         continue;
                     }
                     Err(e) => {

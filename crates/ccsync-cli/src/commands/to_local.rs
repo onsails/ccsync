@@ -51,9 +51,11 @@ impl ToLocal {
             // Interactive mode: prompt for each action
             let mut prompter = InteractivePrompter::new();
             engine
-                .sync_with_approver(&global_path, &local_path, Some(Box::new(move |action| {
-                    prompter.prompt(action)
-                })))
+                .sync_with_approver(
+                    &global_path,
+                    &local_path,
+                    Some(Box::new(move |action| prompter.prompt(action))),
+                )
                 .context("Sync operation failed")?
         };
 

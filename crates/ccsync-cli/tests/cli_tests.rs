@@ -103,8 +103,7 @@ fn test_to_local_with_multiple_types() {
 fn test_to_local_with_conflict_mode() {
     let mut cmd = Command::cargo_bin("ccsync").unwrap();
     // May succeed or fail depending on whether directories exist
-    cmd.args(["to-local", "--conflict", "overwrite"])
-        .assert();
+    cmd.args(["to-local", "--conflict", "overwrite"]).assert();
 }
 
 #[test]
@@ -161,8 +160,7 @@ fn test_global_flags_with_to_local() {
 fn test_preserve_symlinks_flag() {
     let mut cmd = Command::cargo_bin("ccsync").unwrap();
     // May succeed or fail depending on whether directories exist
-    cmd.args(["--preserve-symlinks", "to-local"])
-        .assert();
+    cmd.args(["--preserve-symlinks", "to-local"]).assert();
 }
 
 #[test]

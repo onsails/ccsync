@@ -1,6 +1,6 @@
 //! Interactive prompting for sync operations
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use ccsync::comparison::FileComparator;
 use ccsync::sync::SyncAction;
 use dialoguer::Select;
@@ -121,18 +121,15 @@ impl InteractivePrompter {
     /// Describe the action in user-friendly terms
     fn describe_action(action: &SyncAction) -> String {
         match action {
-            SyncAction::Create { source: _, dest } => {
+            SyncAction::Create { source, dest } => {
                 format!(
-                    "📄 Create new file:\n  → {}",
+                    "📄 Create new file:\n  Source: {}\n  Dest:   {}",
+                    source.display(),
                     dest.display()
                 )
             }
             SyncAction::Skip { path, reason } => {
-                format!(
-                    "⊘ Skip file ({}):\n  → {}",
-                    reason,
-                    path.display()
-                )
+                format!("⊘ Skip file ({}):\n  → {}", reason, path.display())
             }
             SyncAction::Conflict {
                 source,
@@ -140,7 +137,11 @@ impl InteractivePrompter {
                 strategy,
                 source_newer,
             } => {
-                let newer_indicator = if *source_newer { "source newer" } else { "dest newer" };
+                let newer_indicator = if *source_newer {
+                    "source newer"
+                } else {
+                    "dest newer"
+                };
                 format!(
                     "⚠️  Conflict detected ({}):\n  Source: {}\n  Dest:   {}\n  Strategy: {:?}",
                     newer_indicator,
@@ -169,7 +170,10 @@ impl InteractivePrompter {
                         println!("\n{diff}");
                     }
                     Err(e) => {
-                        eprintln!("Warning: Failed to generate diff: {e}");
+                        eprintln!("\nWarning: Failed to generate diff: {e}");
+                        eprintln!("Source: {}", source.display());
+                        eprintln!("Dest:   {}", dest.display());
+                        eprintln!("You can inspect these files manually.");
                     }
                 }
             }
