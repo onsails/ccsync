@@ -3,7 +3,7 @@
 use anyhow::{bail, Context, Result};
 use ccsync::comparison::FileComparator;
 use ccsync::sync::SyncAction;
-use dialoguer::Input;
+use dialoguer::console::Term;
 
 /// User's choice for a sync action
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,27 +98,36 @@ impl InteractivePrompter {
 
     /// Show the selection prompt
     fn show_prompt() -> Result<UserChoice> {
-        loop {
-            let input: String = Input::new()
-                .with_prompt("Proceed? [y/n/a/s/d/q] (yes/no/all/skip-all/diff/quit)")
-                .interact_text()
-                .context("Failed to show prompt")?;
+        let term = Term::stderr();
 
-            let choice = input.trim().to_lowercase();
-            match choice.as_str() {
-                "y" | "yes" => return Ok(UserChoice::Yes),
-                "n" | "no" => return Ok(UserChoice::No),
-                "a" | "all" => return Ok(UserChoice::All),
-                "s" | "none" | "skip" | "skip-all" => return Ok(UserChoice::None),
-                "d" | "diff" => return Ok(UserChoice::Diff),
-                "q" | "quit" | "exit" => return Ok(UserChoice::Quit),
-                "" => {
-                    // Default to no on empty input
+        print!("Proceed? [y/n/a/s/d/q] (yes/no/all/skip-all/diff/quit): ");
+        std::io::Write::flush(&mut std::io::stdout()).context("Failed to flush stdout")?;
+
+        loop {
+            let key = term
+                .read_char()
+                .context("Failed to read user input")?;
+
+            // Echo the character
+            println!("{key}");
+
+            match key {
+                'y' | 'Y' => return Ok(UserChoice::Yes),
+                'n' | 'N' => return Ok(UserChoice::No),
+                'a' | 'A' => return Ok(UserChoice::All),
+                's' | 'S' => return Ok(UserChoice::None),
+                'd' | 'D' => return Ok(UserChoice::Diff),
+                'q' | 'Q' => return Ok(UserChoice::Quit),
+                '\n' | '\r' => {
+                    // Enter key - default to no
+                    println!("(defaulted to 'no')");
                     return Ok(UserChoice::No);
                 }
                 _ => {
-                    eprintln!("Invalid choice. Please enter y/n/a/s/d/q or the full word.");
-                    // Loop to re-prompt
+                    println!("Invalid key. Press y/n/a/s/d/q");
+                    print!("Proceed? [y/n/a/s/d/q]: ");
+                    std::io::Write::flush(&mut std::io::stdout())
+                        .context("Failed to flush stdout")?;
                 }
             }
         }
@@ -162,9 +171,23 @@ impl InteractivePrompter {
     /// Show a diff for the action
     fn show_diff(action: &SyncAction) {
         match action {
-            SyncAction::Create { source: _, dest } => {
-                println!("\n--- New file (no diff available) ---");
-                println!("Dest:   {}", dest.display());
+            SyncAction::Create { source, dest } => {
+                // Show new file content as additions
+                println!("\n--- New file ---");
+                println!("+++ {}", dest.display());
+
+                match std::fs::read_to_string(source) {
+                    Ok(content) => {
+                        println!();
+                        for line in content.lines() {
+                            println!("\x1b[32m+{line}\x1b[0m");
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("\nWarning: Failed to read file: {e}");
+                        eprintln!("Source: {}", source.display());
+                    }
+                }
             }
             SyncAction::Skip { .. } => {
                 println!("\n--- No diff (file will be skipped) ---");
