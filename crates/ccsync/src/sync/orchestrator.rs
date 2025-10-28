@@ -88,7 +88,7 @@ impl SyncEngine {
             let action = SyncActionResolver::resolve(
                 file.path.clone(),
                 dest_path,
-                comparison,
+                &comparison,
                 self.get_conflict_strategy(),
             );
 

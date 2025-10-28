@@ -37,8 +37,8 @@ impl SyncActionResolver {
     pub fn resolve(
         source: PathBuf,
         dest: PathBuf,
-        comparison: ComparisonResult,
-        default_strategy: ConflictStrategy,
+        comparison: &ComparisonResult,
+        _default_strategy: ConflictStrategy,
     ) -> SyncAction {
         match comparison {
             ComparisonResult::Identical => SyncAction::Skip {
@@ -53,16 +53,12 @@ impl SyncActionResolver {
             ComparisonResult::Conflict {
                 source_newer,
                 strategy,
-            } => {
-                // Use strategy from comparison, or fall back to default
-                let resolved_strategy = strategy;
-                SyncAction::Conflict {
-                    source,
-                    dest,
-                    strategy: resolved_strategy,
-                    source_newer,
-                }
-            }
+            } => SyncAction::Conflict {
+                source,
+                dest,
+                strategy: *strategy,
+                source_newer: *source_newer,
+            },
         }
     }
 }
