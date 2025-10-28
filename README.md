@@ -6,8 +6,16 @@ Keep your Claude Code setup consistent across projects while maintaining project
 
 ## 📦 Installation
 
+### Using Cargo
+
 ```bash
 cargo install ccsync
+```
+
+### Using curl (Linux/macOS)
+
+```bash
+curl https://i.jpillora.com/onsails/ccsync@ccsync-v0.1.4! | bash
 ```
 
 ## 🚀 Quick Start
