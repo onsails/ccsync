@@ -202,7 +202,8 @@
         "testStrategy": "Integration tests simulating user input and automation. Validate prompt logic, dry-run output, and correct exit codes. Test interruption handling.",
         "priority": "high",
         "dependencies": [
-          3
+          3,
+          "6"
         ],
         "status": "pending",
         "subtasks": [
@@ -354,7 +355,6 @@
         "dependencies": [
           2,
           3,
-          4,
           5
         ],
         "status": "pending",
