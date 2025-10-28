@@ -141,4 +141,4 @@ A: Use `ccsync to-local --yes-all` to skip all prompts.
 
 ## License
 
-MIT OR Apache-2.0
+MIT
