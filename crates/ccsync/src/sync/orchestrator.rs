@@ -95,6 +95,7 @@ impl SyncEngine {
 
             // Execute action
             if let Err(e) = executor.execute(&action, &mut result) {
+                eprintln!("Error: {e}");
                 result.errors.push(e.to_string());
             }
         }
@@ -104,11 +105,23 @@ impl SyncEngine {
             eprintln!("Warning: {warning}");
         }
 
+        // Fail fast if any errors occurred
+        if !result.errors.is_empty() {
+            anyhow::bail!(
+                "Sync failed with {} error(s):\n  - {}",
+                result.errors.len(),
+                result.errors.join("\n  - ")
+            );
+        }
+
         Ok(result)
     }
 
     /// Get conflict strategy from config or use default
-    fn get_conflict_strategy(&self) -> ConflictStrategy {
-        self.config.conflict_strategy.unwrap_or(ConflictStrategy::Fail)
+    const fn get_conflict_strategy(&self) -> ConflictStrategy {
+        match self.config.conflict_strategy {
+            Some(strategy) => strategy,
+            None => ConflictStrategy::Fail,
+        }
     }
 }

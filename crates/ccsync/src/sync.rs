@@ -144,12 +144,14 @@ mod integration_tests {
         let config = Config::default(); // Default is Fail
         let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
 
-        let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
+        // Should fail due to conflict with Fail strategy
+        let result = engine.sync(source_dir.path(), dest_dir.path());
+        assert!(result.is_err());
 
-        // Should encounter conflict and record error
-        assert_eq!(result.conflicts, 0);
-        assert!(!result.errors.is_empty());
-        assert!(!result.is_success());
+        let err = result.unwrap_err();
+        let err_msg = err.to_string();
+        assert!(err_msg.contains("Sync failed"));
+        assert!(err_msg.contains("Conflict"));
     }
 
     #[test]
