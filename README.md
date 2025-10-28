@@ -7,14 +7,7 @@ Keep your Claude Code setup consistent across projects while maintaining project
 ## Installation
 
 ```bash
-cargo install --path crates/ccsync-cli
-```
-
-Or build from source:
-
-```bash
-cargo build --release
-# Binary available at: target/release/ccsync
+cargo install ccsync
 ```
 
 ## Quick Start
