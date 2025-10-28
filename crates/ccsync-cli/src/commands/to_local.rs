@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use ccsync::comparison::ConflictStrategy;
-use ccsync::config::{Config, SyncDirection};
-use ccsync::sync::{SyncEngine, SyncReporter};
+use ccsync_core::comparison::ConflictStrategy;
+use ccsync_core::config::{Config, SyncDirection};
+use ccsync_core::sync::{SyncEngine, SyncReporter};
 
 use crate::cli::{ConfigType, ConflictMode};
 use crate::commands::SyncOptions;

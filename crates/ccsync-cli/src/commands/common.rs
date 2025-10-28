@@ -1,6 +1,6 @@
 //! Common types and utilities for command execution
 
-use ccsync::config::{Config, ConfigManager};
+use ccsync_core::config::{Config, ConfigManager};
 
 /// Execution options for sync commands
 #[allow(clippy::struct_excessive_bools)]

@@ -1,8 +1,8 @@
 //! Interactive prompting for sync operations
 
 use anyhow::{bail, Context, Result};
-use ccsync::comparison::FileComparator;
-use ccsync::sync::SyncAction;
+use ccsync_core::comparison::FileComparator;
+use ccsync_core::sync::SyncAction;
 use dialoguer::console::Term;
 
 /// User's choice for a sync action

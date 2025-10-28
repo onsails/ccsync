@@ -1,5 +1,5 @@
 [package]
-name = "ccsync-cli"
+name = "ccsync"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -14,7 +14,7 @@ name = "ccsync"
 path = "src/main.rs"
 
 [dependencies]
-ccsync = { path = "../ccsync" }
+ccsync-core = { version = "0.1.0", path = "../ccsync" }
 clap.workspace = true
 anyhow.workspace = true
 dialoguer.workspace = true

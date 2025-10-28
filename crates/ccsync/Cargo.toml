@@ -1,5 +1,5 @@
 [package]
-name = "ccsync"
+name = "ccsync-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
