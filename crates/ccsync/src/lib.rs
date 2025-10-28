@@ -26,3 +26,7 @@ pub(crate) mod comparison;
 /// Configuration file parsing and management
 #[cfg_attr(not(test), allow(dead_code))]
 pub(crate) mod config;
+
+/// Bidirectional synchronization engine
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) mod sync;
