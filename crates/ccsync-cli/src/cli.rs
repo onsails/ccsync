@@ -13,10 +13,6 @@ pub struct Cli {
     #[arg(short, long, global = true)]
     pub verbose: bool,
 
-    /// Run in non-interactive mode (skip all prompts)
-    #[arg(long, global = true)]
-    pub non_interactive: bool,
-
     /// Accept all items in interactive mode without prompting
     #[arg(long, global = true)]
     pub yes_all: bool,

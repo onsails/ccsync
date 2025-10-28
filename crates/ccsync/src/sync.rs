@@ -10,7 +10,8 @@ mod orchestrator;
 mod reporting;
 
 // Public exports for CLI integration
-pub use orchestrator::SyncEngine;
+pub use actions::SyncAction;
+pub use orchestrator::{ApprovalCallback, SyncEngine};
 pub use reporting::SyncReporter;
 
 /// Synchronization result with statistics

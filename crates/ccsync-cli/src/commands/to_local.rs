@@ -6,6 +6,7 @@ use ccsync::config::{Config, SyncDirection};
 use ccsync::sync::{SyncEngine, SyncReporter};
 
 use crate::cli::{ConfigType, ConflictMode};
+use crate::interactive::InteractivePrompter;
 
 pub struct ToLocal;
 
@@ -15,6 +16,7 @@ impl ToLocal {
         conflict: &ConflictMode,
         verbose: bool,
         dry_run: bool,
+        yes_all: bool,
     ) -> anyhow::Result<()> {
         if verbose {
             println!("Executing to-local command");
@@ -39,10 +41,33 @@ impl ToLocal {
         let engine = SyncEngine::new(config, SyncDirection::ToLocal)
             .context("Failed to initialize sync engine")?;
 
-        // Execute sync
-        let result = engine
-            .sync(&global_path, &local_path)
-            .context("Sync operation failed")?;
+        // Execute sync with optional interactive approval
+        let result = if yes_all || dry_run {
+            // Non-interactive: auto-approve all or just preview
+            engine
+                .sync(&global_path, &local_path)
+                .context("Sync operation failed")?
+        } else {
+            // Interactive mode: prompt for each action
+            let mut prompter = InteractivePrompter::new();
+            match engine.sync_with_approver(
+                &global_path,
+                &local_path,
+                Some(Box::new(move |action| prompter.prompt(action))),
+            ) {
+                Ok(result) => result,
+                Err(e) => {
+                    // Check if this is a user abort (not a real error)
+                    let err_msg = e.to_string();
+                    if err_msg.contains("User aborted") {
+                        eprintln!("\nSync cancelled by user.");
+                        std::process::exit(0); // Clean exit, not an error
+                    } else {
+                        return Err(e).context("Sync operation failed");
+                    }
+                }
+            }
+        };
 
         // Display results
         let summary = SyncReporter::generate_summary(&result);
