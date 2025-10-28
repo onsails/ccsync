@@ -1,7 +1,7 @@
 [workspace]
 members = [
+    "crates/ccsync-core",
     "crates/ccsync",
-    "crates/ccsync-cli",
 ]
 resolver = "2"
 
