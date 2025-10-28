@@ -42,6 +42,7 @@ impl FileOperationExecutor {
                     eprintln!("[DRY RUN] Would skip: {} ({})", path.display(), reason);
                 }
                 result.skipped += 1;
+                *result.skip_reasons.entry(reason.clone()).or_insert(0) += 1;
             }
             SyncAction::Conflict {
                 source,

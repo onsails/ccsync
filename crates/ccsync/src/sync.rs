@@ -24,6 +24,8 @@ pub struct SyncResult {
     pub deleted: usize,
     /// Files skipped
     pub skipped: usize,
+    /// Skip reasons with counts
+    pub skip_reasons: std::collections::HashMap<String, usize>,
     /// Conflicts encountered
     pub conflicts: usize,
     /// Errors encountered
