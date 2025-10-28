@@ -15,6 +15,8 @@ use crate::scanner::{FileFilter, Scanner};
 /// Main sync engine
 pub struct SyncEngine {
     config: Config,
+    /// Sync direction (currently unused, will be used for direction-specific rules and reporting)
+    #[allow(dead_code)]
     direction: SyncDirection,
     pattern_matcher: Option<PatternMatcher>,
 }
@@ -62,8 +64,9 @@ impl SyncEngine {
 
         for file in &scan_result.files {
             // Apply pattern filter
+            let is_dir = file.path.is_dir();
             if let Some(ref matcher) = self.pattern_matcher
-                && !matcher.should_include(&file.path, false) {
+                && !matcher.should_include(&file.path, is_dir) {
                     result.skipped += 1;
                     continue;
                 }

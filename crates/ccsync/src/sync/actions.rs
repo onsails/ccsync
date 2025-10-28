@@ -9,8 +9,6 @@ use crate::comparison::{ComparisonResult, ConflictStrategy};
 pub enum SyncAction {
     /// Create new file at destination
     Create { source: PathBuf, dest: PathBuf },
-    /// Update existing file at destination
-    Update { source: PathBuf, dest: PathBuf },
     /// Skip this file (no action needed)
     Skip { path: PathBuf, reason: String },
     /// Conflict requiring resolution
@@ -26,12 +24,6 @@ pub enum SyncAction {
 pub struct SyncActionResolver;
 
 impl SyncActionResolver {
-    /// Create a new action resolver
-    #[must_use]
-    pub const fn new() -> Self {
-        Self
-    }
-
     /// Determine sync action from comparison result
     #[must_use]
     pub fn resolve(

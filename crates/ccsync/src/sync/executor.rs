@@ -37,14 +37,6 @@ impl FileOperationExecutor {
                 }
                 result.created += 1;
             }
-            SyncAction::Update { source, dest } => {
-                if self.dry_run {
-                    eprintln!("[DRY RUN] Would update: {}", dest.display());
-                } else {
-                    Self::copy_file(source, dest)?;
-                }
-                result.updated += 1;
-            }
             SyncAction::Skip { path, reason } => {
                 if self.dry_run {
                     eprintln!("[DRY RUN] Would skip: {} ({})", path.display(), reason);

@@ -54,6 +54,7 @@ mod integration_tests {
     use tempfile::TempDir;
 
     use super::*;
+    use crate::comparison::ConflictStrategy;
     use crate::config::{Config, SyncDirection};
 
     fn setup_test_dirs() -> (TempDir, TempDir) {
@@ -198,6 +199,33 @@ mod integration_tests {
         assert!(dir1.path().join("agents/from2.md").exists());
         assert!(dir2.path().join("agents/from1.md").exists());
         assert!(dir2.path().join("agents/from2.md").exists());
+    }
+
+    #[test]
+    fn test_sync_update_existing_files() {
+        let (source_dir, dest_dir) = setup_test_dirs();
+
+        // Create initial identical files
+        create_test_file(source_dir.path(), "agents/test.md", "v1");
+        create_test_file(dest_dir.path(), "agents/test.md", "v1");
+
+        // Update source file
+        create_test_file(source_dir.path(), "agents/test.md", "v2");
+
+        let mut config = Config::default();
+        config.conflict_strategy = Some(ConflictStrategy::Overwrite);
+
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
+        let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
+
+        // Should update the file
+        assert_eq!(result.updated, 1);
+        assert_eq!(result.created, 0);
+        assert!(result.is_success());
+
+        // Verify content was updated
+        let content = fs::read_to_string(dest_dir.path().join("agents/test.md")).unwrap();
+        assert_eq!(content, "v2");
     }
 
     #[test]

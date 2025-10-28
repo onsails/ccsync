@@ -8,12 +8,6 @@ use super::SyncResult;
 pub struct SyncReporter;
 
 impl SyncReporter {
-    /// Create a new reporter
-    #[must_use]
-    pub const fn new() -> Self {
-        Self
-    }
-
     /// Generate a summary report
     #[must_use]
     pub fn generate_summary(result: &SyncResult) -> String {
