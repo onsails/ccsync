@@ -83,20 +83,20 @@ impl SyncEngine {
         let conflict_strategy = self.get_conflict_strategy();
 
         for file in &scan_result.files {
-            // Apply pattern filter
-            let is_dir = file.path.is_dir();
-            if let Some(ref matcher) = self.pattern_matcher
-                && !matcher.should_include(&file.path, is_dir)
-            {
-                result.skipped += 1;
-                continue;
-            }
-
-            // Get relative path
+            // Get relative path first (needed for pattern matching)
             let rel_path = file
                 .path
                 .strip_prefix(source_root)
                 .with_context(|| format!("Failed to strip prefix from {}", file.path.display()))?;
+
+            // Apply pattern filter to relative path
+            let is_dir = file.path.is_dir();
+            if let Some(ref matcher) = self.pattern_matcher
+                && !matcher.should_include(rel_path, is_dir)
+            {
+                result.skipped += 1;
+                continue;
+            }
 
             let dest_path = dest_root.join(rel_path);
 

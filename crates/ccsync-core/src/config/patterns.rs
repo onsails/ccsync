@@ -99,4 +99,17 @@ mod tests {
         assert!(!matcher.should_include(&PathBuf::from("node_modules"), true));
         assert!(matcher.should_include(&PathBuf::from("src"), true));
     }
+
+    #[test]
+    fn test_relative_path_wildcards() {
+        let matcher = PatternMatcher::with_patterns(&["agents/git-*".to_string()], &[]).unwrap();
+
+        // Should match agents/git-* pattern
+        assert!(!matcher.should_include(&PathBuf::from("agents/git-commit.md"), false));
+        assert!(!matcher.should_include(&PathBuf::from("agents/git-helper.md"), false));
+
+        // Should NOT match agents/git-* pattern
+        assert!(matcher.should_include(&PathBuf::from("agents/other-agent.md"), false));
+        assert!(matcher.should_include(&PathBuf::from("skills/test.md"), false));
+    }
 }

@@ -260,4 +260,37 @@ mod integration_tests {
         assert!(summary.contains("✗ Completed with errors"));
         assert!(!result.is_success());
     }
+
+    #[test]
+    fn test_sync_pattern_matching_with_relative_paths() {
+        let (source_dir, dest_dir) = setup_test_dirs();
+
+        // Create multiple files with git-* pattern in agents/
+        create_test_file(source_dir.path(), "agents/git-commit.md", "git commit agent");
+        create_test_file(source_dir.path(), "agents/git-helper.md", "git helper agent");
+        create_test_file(source_dir.path(), "agents/other-agent.md", "other agent");
+        // Create a skill (skills/test-skill/SKILL.md is the expected structure)
+        create_test_file(source_dir.path(), "skills/test-skill/SKILL.md", "test skill");
+
+        // Configure to ignore agents/git-* pattern (relative path)
+        let mut config = Config::default();
+        config.ignore = vec!["agents/git-*".to_string()];
+
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
+        let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
+
+        // Should create 2 files (other-agent.md and skills/test-skill/SKILL.md)
+        // Should skip 2 files (git-commit.md and git-helper.md)
+        assert_eq!(result.created, 2);
+        assert_eq!(result.skipped, 2);
+        assert!(result.is_success());
+
+        // Verify git-* files were NOT created
+        assert!(!dest_dir.path().join("agents/git-commit.md").exists());
+        assert!(!dest_dir.path().join("agents/git-helper.md").exists());
+
+        // Verify other files WERE created
+        assert!(dest_dir.path().join("agents/other-agent.md").exists());
+        assert!(dest_dir.path().join("skills/test-skill/SKILL.md").exists());
+    }
 }
