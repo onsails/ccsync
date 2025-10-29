@@ -9,8 +9,8 @@
 //!
 //! Configs are loaded from lowest to highest precedence:
 //! 1. Global config (~/.config/ccsync/config.toml)
-//! 2. Project config (.ccsync)
-//! 3. Local config (.ccsync.local)
+//! 2. Project config (.ccsync.toml)
+//! 3. Local config (.ccsync.local.toml)
 //! 4. CLI config (--config flag)
 //!
 //! Higher precedence configs fully override boolean values from lower precedence configs.
@@ -44,8 +44,8 @@ impl ConfigMerger {
     ///
     /// Precedence order (highest to lowest):
     /// 1. CLI config
-    /// 2. .ccsync.local
-    /// 3. .ccsync
+    /// 2. .ccsync.local.toml
+    /// 3. .ccsync.toml
     /// 4. Global config
     ///
     /// # Errors

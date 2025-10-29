@@ -9,9 +9,9 @@ use crate::error::Result;
 pub struct ConfigFiles {
     /// Config from CLI flag (highest precedence)
     pub cli: Option<PathBuf>,
-    /// Project-local config (.ccsync.local)
+    /// Project-local config (.ccsync.local.toml)
     pub local: Option<PathBuf>,
-    /// Project config (.ccsync)
+    /// Project config (.ccsync.toml)
     pub project: Option<PathBuf>,
     /// Global XDG config
     pub global: Option<PathBuf>,
@@ -53,8 +53,8 @@ impl ConfigDiscovery {
             None
         };
 
-        let local = Self::find_file(".ccsync.local");
-        let project = Self::find_file(".ccsync");
+        let local = Self::find_file(".ccsync.local.toml");
+        let project = Self::find_file(".ccsync.toml");
         let global = Self::find_global_config();
 
         Ok(ConfigFiles {

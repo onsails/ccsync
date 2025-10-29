@@ -104,7 +104,7 @@ Press **q** or **Ctrl+C** to cancel anytime.
 
 ## ⚙️ Configuration Files
 
-Create a `.ccsync` file in your project to customize sync behavior:
+Create a `.ccsync.toml` file in your project to customize sync behavior:
 
 ```toml
 # Ignore certain files (gitignore-style patterns)
@@ -119,8 +119,8 @@ conflict_strategy = "newer"
 
 **Config file locations** (in order of precedence):
 1. `--config <path>` - Custom config file via flag
-2. `.ccsync.local` - Project-local (gitignored, for personal settings)
-3. `.ccsync` - Project config (committed to repo)
+2. `.ccsync.local.toml` - Project-local (gitignored, for personal settings)
+3. `.ccsync.toml` - Project config (committed to repo)
 4. `~/.config/ccsync/config.toml` - Global config
 
 **CLI flags always override config files.**

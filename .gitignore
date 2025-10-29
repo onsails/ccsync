@@ -49,7 +49,7 @@ target/
 # tasks/
 
 # Local config overrides (user-specific, not committed)
-.ccsync.local 
+.ccsync.local.toml 
 
 # Devenv
 .devenv*
