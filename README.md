@@ -22,7 +22,7 @@ curl https://i.jpillora.com/onsails/ccsync@ccsync-v0.1.5! | bash
 
 ### Using Nix/NixOS
 
-> **Note:** NixOS package is pending review ([PR #456721](https://github.com/NixOS/nixpkgs/pull/456721))
+> **Note:** Nix package is pending review ([PR #456721](https://github.com/NixOS/nixpkgs/pull/456721))
 
 ```bash
 # Once merged, install with:
