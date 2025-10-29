@@ -4,6 +4,8 @@ Sync your Claude Code agents, skills, and commands between global and project co
 
 Keep your Claude Code setup consistent across projects while maintaining project-specific customizations.
 
+<img width="462" height="426" alt="ccsync" src="https://github.com/user-attachments/assets/f24ff5e4-ef15-41c2-8b6d-48aba67a6ac2" />
+
 ## 📦 Installation
 
 ### Using Cargo
