@@ -18,7 +18,7 @@ similar = "~2.7.0"
 serde = { version = "~1.0.228", features = ["derive"] }
 toml = "~0.9.8"
 dirs = "~6.0.0"
-ignore = "~0.4.24"
+ignore = "~0.4.25"
 
 [dev-dependencies]
 tempfile = "~3.23.0"
