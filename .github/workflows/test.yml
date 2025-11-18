@@ -27,7 +27,7 @@ jobs:
           repository: ${{ github.repository }}
           fetch-depth: 0
 
-      - uses: onsails/nix-action@v1
+      - uses: onsails/nix-action@v2
         with:
           additionalProfiles: 'nixpkgs#sccache'
 
