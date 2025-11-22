@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/onsails/ccsync/compare/ccsync-core-v0.1.5...ccsync-core-v0.1.6) - 2025-11-22
+
+### Added
+
+- implement whole-directory skill syncing
+
 ## [0.1.5](https://github.com/onsails/ccsync/compare/ccsync-core-v0.1.4...ccsync-core-v0.1.5) - 2025-10-29
 
 ### Fixed
