@@ -9,14 +9,17 @@ use std::path::{Path, PathBuf};
 
 use crate::error::Result;
 
-/// Scan the skills/ directory for `SKILL.md` files (one level deep)
+/// Scan the skills/ directory for skill directories (one level deep)
+///
+/// Returns paths to skill directories that contain a `SKILL.md` file.
+/// The entire directory will be synced, including all supporting files.
 ///
 /// # Errors
 ///
 /// Returns an error if the directory cannot be read or if there are
 /// permission issues.
 pub fn scan(base: &Path) -> Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
+    let mut directories = Vec::new();
 
     for entry in fs::read_dir(base)? {
         let entry = entry?;
@@ -26,12 +29,13 @@ pub fn scan(base: &Path) -> Result<Vec<PathBuf>> {
         if path.is_dir() {
             let skill_md = path.join("SKILL.md");
             if skill_md.exists() && skill_md.is_file() {
-                files.push(skill_md);
+                // Return the directory path, not the SKILL.md file
+                directories.push(path);
             }
         }
     }
 
-    Ok(files)
+    Ok(directories)
 }
 
 #[cfg(test)]
@@ -64,11 +68,11 @@ mod tests {
         // File directly in skills/ (should be ignored)
         fs::write(skills_dir.join("direct.md"), "ignore").unwrap();
 
-        let files = scan(&skills_dir).unwrap();
+        let directories = scan(&skills_dir).unwrap();
 
-        assert_eq!(files.len(), 2);
-        assert!(files.iter().any(|p| p.ends_with("skill-1/SKILL.md")));
-        assert!(files.iter().any(|p| p.ends_with("skill-2/SKILL.md")));
+        assert_eq!(directories.len(), 2);
+        assert!(directories.iter().any(|p| p.ends_with("skill-1")));
+        assert!(directories.iter().any(|p| p.ends_with("skill-2")));
     }
 
     #[test]
@@ -77,7 +81,7 @@ mod tests {
         let skills_dir = tmp.path().join("skills");
         fs::create_dir(&skills_dir).unwrap();
 
-        let files = scan(&skills_dir).unwrap();
-        assert_eq!(files.len(), 0);
+        let directories = scan(&skills_dir).unwrap();
+        assert_eq!(directories.len(), 0);
     }
 }

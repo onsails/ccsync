@@ -7,6 +7,7 @@
 //! - Conflict classification and resolution strategy determination
 
 mod diff;
+mod directory;
 mod hash;
 mod timestamp;
 
@@ -18,6 +19,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 pub use diff::DiffGenerator;
+pub use directory::{DirectoryComparator, DirectoryComparison};
 pub use hash::FileHasher;
 pub use timestamp::TimestampComparator;
 

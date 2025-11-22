@@ -1,7 +1,7 @@
 //! Interactive prompting for sync operations
 
 use anyhow::{bail, Context, Result};
-use ccsync_core::comparison::FileComparator;
+use ccsync_core::comparison::{DiffGenerator, DirectoryComparator, FileComparator};
 use ccsync_core::sync::SyncAction;
 use dialoguer::console::Term;
 
@@ -143,6 +143,13 @@ impl InteractivePrompter {
                     dest.display()
                 )
             }
+            SyncAction::CreateDirectory { source, dest } => {
+                format!(
+                    "📁 Create new directory:\n  Source: {}\n  Dest:   {}",
+                    source.display(),
+                    dest.display()
+                )
+            }
             SyncAction::Skip { path, reason } => {
                 format!("⊘ Skip file ({}):\n  → {}", reason, path.display())
             }
@@ -159,6 +166,25 @@ impl InteractivePrompter {
                 };
                 format!(
                     "⚠️  Conflict detected ({}):\n  Source: {}\n  Dest:   {}\n  Strategy: {:?}",
+                    newer_indicator,
+                    source.display(),
+                    dest.display(),
+                    strategy
+                )
+            }
+            SyncAction::DirectoryConflict {
+                source,
+                dest,
+                strategy,
+                source_newer,
+            } => {
+                let newer_indicator = if *source_newer {
+                    "source newer"
+                } else {
+                    "dest newer"
+                };
+                format!(
+                    "⚠️  Directory conflict detected ({}):\n  Source: {}\n  Dest:   {}\n  Strategy: {:?}",
                     newer_indicator,
                     source.display(),
                     dest.display(),
@@ -189,6 +215,10 @@ impl InteractivePrompter {
                     }
                 }
             }
+            SyncAction::CreateDirectory { source, dest } => {
+                println!("\n--- New directory ---");
+                println!("+++ {} (from {})", dest.display(), source.display());
+            }
             SyncAction::Skip { .. } => {
                 println!("\n--- No diff (file will be skipped) ---");
             }
@@ -203,6 +233,41 @@ impl InteractivePrompter {
                         eprintln!("Source: {}", source.display());
                         eprintln!("Dest:   {}", dest.display());
                         eprintln!("You can inspect these files manually.");
+                    }
+                }
+            }
+            SyncAction::DirectoryConflict { source, dest, .. } => {
+                // Compare directories to get detailed diff
+                match DirectoryComparator::compare(source, dest) {
+                    Ok(comparison) => {
+                        // Extract skill name from source path
+                        let skill_name = source
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown");
+
+                        match DiffGenerator::generate_directory_summary(
+                            &comparison,
+                            source,
+                            dest,
+                            skill_name,
+                        ) {
+                            Ok(summary) => {
+                                println!("{summary}");
+                            }
+                            Err(e) => {
+                                eprintln!("\nWarning: Failed to generate directory summary: {e}");
+                                println!("\n--- Directory conflict ---");
+                                println!("+++ {}", dest.display());
+                                println!("--- {}", source.display());
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("\nWarning: Failed to compare directories: {e}");
+                        println!("\n--- Directory conflict ---");
+                        println!("+++ {}", dest.display());
+                        println!("--- {}", source.display());
                     }
                 }
             }

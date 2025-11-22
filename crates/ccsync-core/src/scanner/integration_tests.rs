@@ -43,24 +43,15 @@ fn test_full_scan_all_directory_types() {
     let scanner = Scanner::new(filter, false);
     let result = scanner.scan(tmp.path());
 
-    // Should find: 2 agents, 2 skills, 2 commands = 6 total
+    // Should find: 2 agents, 2 skill directories, 2 commands = 6 total
     assert_eq!(result.files.len(), 6);
 
     // Verify each type is found
     assert!(result.files.iter().any(|f| f.path.ends_with("agent1.md")));
     assert!(result.files.iter().any(|f| f.path.ends_with("agent2.md")));
-    assert!(
-        result
-            .files
-            .iter()
-            .any(|f| f.path.ends_with("skill-1/SKILL.md"))
-    );
-    assert!(
-        result
-            .files
-            .iter()
-            .any(|f| f.path.ends_with("skill-2/SKILL.md"))
-    );
+    // Skills are now returned as directories, not SKILL.md files
+    assert!(result.files.iter().any(|f| f.path.ends_with("skill-1")));
+    assert!(result.files.iter().any(|f| f.path.ends_with("skill-2")));
     assert!(
         result
             .files

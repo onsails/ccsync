@@ -14,6 +14,13 @@ pub enum SyncAction {
         /// Destination file path
         dest: PathBuf,
     },
+    /// Create new directory at destination
+    CreateDirectory {
+        /// Source directory path
+        source: PathBuf,
+        /// Destination directory path
+        dest: PathBuf,
+    },
     /// Skip this file (no action needed)
     Skip {
         /// File path being skipped
@@ -26,6 +33,17 @@ pub enum SyncAction {
         /// Source file path
         source: PathBuf,
         /// Destination file path
+        dest: PathBuf,
+        /// Conflict resolution strategy
+        strategy: ConflictStrategy,
+        /// Whether source is newer than destination
+        source_newer: bool,
+    },
+    /// Directory conflict requiring resolution
+    DirectoryConflict {
+        /// Source directory path
+        source: PathBuf,
+        /// Destination directory path
         dest: PathBuf,
         /// Conflict resolution strategy
         strategy: ConflictStrategy,

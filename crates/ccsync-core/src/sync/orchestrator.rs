@@ -7,7 +7,7 @@ use anyhow::Context;
 use super::SyncResult;
 use super::actions::{SyncAction, SyncActionResolver};
 use super::executor::FileOperationExecutor;
-use crate::comparison::{ConflictStrategy, FileComparator};
+use crate::comparison::{ConflictStrategy, DirectoryComparator, FileComparator};
 use crate::config::{Config, PatternMatcher, SyncDirection};
 use crate::error::Result;
 use crate::scanner::{FileFilter, Scanner};
@@ -100,11 +100,43 @@ impl SyncEngine {
 
             let dest_path = dest_root.join(rel_path);
 
-            // Compare files
-            let comparison = FileComparator::compare(&file.path, &dest_path, conflict_strategy)?;
+            // Determine action based on whether it's a file or directory
+            let action = if is_dir {
+                // Handle directory syncing
+                if dest_path.exists() {
+                    // Both exist - compare directories
+                    let dir_comparison =
+                        DirectoryComparator::compare(&file.path, &dest_path)?;
 
-            // Determine action
-            let action = SyncActionResolver::resolve(file.path.clone(), dest_path, &comparison);
+                    if dir_comparison.is_identical() {
+                        SyncAction::Skip {
+                            path: file.path.clone(),
+                            reason: "identical content".to_string(),
+                        }
+                    } else {
+                        // Directories differ - check if source is newer
+                        let source_newer =
+                            DirectoryComparator::is_source_newer(&file.path, &dest_path)?;
+                        SyncAction::DirectoryConflict {
+                            source: file.path.clone(),
+                            dest: dest_path,
+                            strategy: conflict_strategy,
+                            source_newer,
+                        }
+                    }
+                } else {
+                    // Destination doesn't exist - create it
+                    SyncAction::CreateDirectory {
+                        source: file.path.clone(),
+                        dest: dest_path,
+                    }
+                }
+            } else {
+                // Handle file syncing (existing logic)
+                let comparison =
+                    FileComparator::compare(&file.path, &dest_path, conflict_strategy)?;
+                SyncActionResolver::resolve(file.path.clone(), dest_path, &comparison)
+            };
 
             // Skip actions don't need approval (they're automatic decisions)
             if matches!(action, super::actions::SyncAction::Skip { .. }) {

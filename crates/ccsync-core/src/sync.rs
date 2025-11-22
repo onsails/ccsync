@@ -293,4 +293,110 @@ mod integration_tests {
         assert!(dest_dir.path().join("agents/other-agent.md").exists());
         assert!(dest_dir.path().join("skills/test-skill/SKILL.md").exists());
     }
+
+    #[test]
+    fn test_sync_skill_directory_create_new() {
+        let (source_dir, dest_dir) = setup_test_dirs();
+
+        // Create a skill directory with multiple files
+        create_test_file(source_dir.path(), "skills/rust-dev/SKILL.md", "skill content");
+        create_test_file(
+            source_dir.path(),
+            "skills/rust-dev/scripts/check.sh",
+            "script content",
+        );
+        create_test_file(
+            source_dir.path(),
+            "skills/rust-dev/assets/logo.png",
+            "image data",
+        );
+
+        let config = Config::default();
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
+        let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
+
+        // Directory should be created
+        assert_eq!(result.created, 1);
+        assert_eq!(result.updated, 0);
+        assert_eq!(result.skipped, 0);
+        assert!(result.is_success());
+
+        // Verify entire directory structure was copied
+        assert!(dest_dir.path().join("skills/rust-dev").exists());
+        assert!(dest_dir.path().join("skills/rust-dev/SKILL.md").exists());
+        assert!(dest_dir
+            .path()
+            .join("skills/rust-dev/scripts/check.sh")
+            .exists());
+        assert!(dest_dir
+            .path()
+            .join("skills/rust-dev/assets/logo.png")
+            .exists());
+    }
+
+    #[test]
+    fn test_sync_skill_directory_identical() {
+        let (source_dir, dest_dir) = setup_test_dirs();
+
+        // Create identical skill directories in both locations
+        let skill_content = "identical skill";
+        let script_content = "identical script";
+
+        create_test_file(
+            source_dir.path(),
+            "skills/test-skill/SKILL.md",
+            skill_content,
+        );
+        create_test_file(
+            source_dir.path(),
+            "skills/test-skill/helper.py",
+            script_content,
+        );
+
+        create_test_file(dest_dir.path(), "skills/test-skill/SKILL.md", skill_content);
+        create_test_file(dest_dir.path(), "skills/test-skill/helper.py", script_content);
+
+        let config = Config::default();
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
+        let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
+
+        // Should skip identical directory
+        assert_eq!(result.created, 0);
+        assert_eq!(result.updated, 0);
+        assert_eq!(result.skipped, 1);
+        assert!(result.is_success());
+    }
+
+    #[test]
+    fn test_sync_skill_directory_conflict_overwrite() {
+        let (source_dir, dest_dir) = setup_test_dirs();
+
+        // Create different versions of the same skill
+        create_test_file(
+            source_dir.path(),
+            "skills/changed-skill/SKILL.md",
+            "new content",
+        );
+        create_test_file(
+            dest_dir.path(),
+            "skills/changed-skill/SKILL.md",
+            "old content",
+        );
+
+        let mut config = Config::default();
+        config.conflict_strategy = Some(crate::comparison::ConflictStrategy::Overwrite);
+
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
+        let result = engine.sync(source_dir.path(), dest_dir.path()).unwrap();
+
+        // Should update the directory
+        assert_eq!(result.created, 0);
+        assert_eq!(result.updated, 1);
+        assert!(result.is_success());
+
+        // Verify dest has source content
+        let content = fs::read_to_string(dest_dir.path().join("skills/changed-skill/SKILL.md"))
+            .unwrap();
+        assert_eq!(content, "new content");
+    }
 }

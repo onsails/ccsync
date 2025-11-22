@@ -9,6 +9,8 @@ use similar::{ChangeTag, TextDiff};
 
 use crate::error::Result;
 
+use super::directory::DirectoryComparison;
+
 /// Diff generator for creating visual diffs
 pub struct DiffGenerator;
 
@@ -121,6 +123,106 @@ impl DiffGenerator {
         }
 
         Ok(output)
+    }
+
+    /// Generate a summary diff for directories
+    ///
+    /// Shows files to add, modify, and remove with line count information
+    /// for modified files.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if file I/O operations fail.
+    pub fn generate_directory_summary(
+        comparison: &DirectoryComparison,
+        source_dir: &Path,
+        dest_dir: &Path,
+        skill_name: &str,
+    ) -> Result<String> {
+        let mut output = String::new();
+
+        writeln!(
+            output,
+            "\x1b[1m📊 Skill directory diff: {skill_name}\x1b[0m\n"
+        )
+        .expect("Writing to String should never fail");
+
+        if !comparison.added.is_empty() {
+            writeln!(output, "\x1b[32mFiles to add:\x1b[0m")
+                .expect("Writing to String should never fail");
+            for file in &comparison.added {
+                writeln!(output, "  \x1b[32m+\x1b[0m {}", file.display())
+                    .expect("Writing to String should never fail");
+            }
+            output.push('\n');
+        }
+
+        if !comparison.modified.is_empty() {
+            writeln!(output, "\x1b[33mFiles to modify:\x1b[0m")
+                .expect("Writing to String should never fail");
+            for file in &comparison.modified {
+                let src_file = source_dir.join(file);
+                let dst_file = dest_dir.join(file);
+
+                // Try to count lines changed
+                let lines_info = match Self::count_changes(&src_file, &dst_file) {
+                    Ok((added, removed)) => format!(" (+{added} -{removed} lines)"),
+                    Err(_) => String::new(),
+                };
+
+                writeln!(
+                    output,
+                    "  \x1b[33m~\x1b[0m {}{lines_info}",
+                    file.display()
+                )
+                .expect("Writing to String should never fail");
+            }
+            output.push('\n');
+        }
+
+        if !comparison.removed.is_empty() {
+            writeln!(output, "\x1b[31mFiles to remove:\x1b[0m")
+                .expect("Writing to String should never fail");
+            for file in &comparison.removed {
+                writeln!(output, "  \x1b[31m-\x1b[0m {}", file.display())
+                    .expect("Writing to String should never fail");
+            }
+            output.push('\n');
+        }
+
+        if comparison.is_identical() {
+            writeln!(output, "\x1b[32mDirectories are identical\x1b[0m")
+                .expect("Writing to String should never fail");
+        } else {
+            writeln!(
+                output,
+                "\x1b[2mPress 'c' to see content diff, or any other key to return...\x1b[0m"
+            )
+            .expect("Writing to String should never fail");
+        }
+
+        Ok(output)
+    }
+
+    /// Count added and removed lines in a file diff
+    fn count_changes(source: &Path, destination: &Path) -> Result<(usize, usize)> {
+        let source_content = fs::read_to_string(source)?;
+        let dest_content = fs::read_to_string(destination)?;
+
+        let diff = TextDiff::from_lines(&dest_content, &source_content);
+
+        let mut added = 0;
+        let mut removed = 0;
+
+        for change in diff.iter_all_changes() {
+            match change.tag() {
+                ChangeTag::Insert => added += 1,
+                ChangeTag::Delete => removed += 1,
+                ChangeTag::Equal => {}
+            }
+        }
+
+        Ok((added, removed))
     }
 }
 
