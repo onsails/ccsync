@@ -216,8 +216,37 @@ impl InteractivePrompter {
                 }
             }
             SyncAction::CreateDirectory { source, dest } => {
-                println!("\n--- New directory ---");
-                println!("+++ {} (from {})", dest.display(), source.display());
+                // Show what files will be created in the new directory
+                match DirectoryComparator::compare(source, dest) {
+                    Ok(comparison) => {
+                        // Extract skill name from source path
+                        let skill_name = source
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown");
+
+                        println!("\n📦 New directory: {skill_name}");
+                        println!("   Will create {} file(s)", comparison.added.len());
+
+                        if comparison.added.len() <= 10 {
+                            // Show all files if there aren't too many
+                            for file in &comparison.added {
+                                println!("     \x1b[32m+\x1b[0m {}", file.display());
+                            }
+                        } else {
+                            // Show first 10 files
+                            for file in comparison.added.iter().take(10) {
+                                println!("     \x1b[32m+\x1b[0m {}", file.display());
+                            }
+                            println!("     ... and {} more file(s)", comparison.added.len() - 10);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("\nWarning: Failed to analyze directory: {e}");
+                        println!("\n--- New directory ---");
+                        println!("+++ {} (from {})", dest.display(), source.display());
+                    }
+                }
             }
             SyncAction::Skip { .. } => {
                 println!("\n--- No diff (file will be skipped) ---");
