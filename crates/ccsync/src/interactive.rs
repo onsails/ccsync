@@ -1,7 +1,7 @@
 //! Interactive prompting for sync operations
 
 use anyhow::{bail, Context, Result};
-use ccsync_core::comparison::{DiffGenerator, DirectoryComparator, FileComparator};
+use ccsync_core::comparison::{ConflictStrategy, DiffGenerator, DirectoryComparator, FileComparator};
 use ccsync_core::sync::SyncAction;
 use dialoguer::console::Term;
 
@@ -180,17 +180,30 @@ impl InteractivePrompter {
                 strategy,
                 source_newer,
             } => {
-                let newer_indicator = if *source_newer {
-                    "source newer"
-                } else {
-                    "dest newer"
+                let action_desc = match strategy {
+                    ConflictStrategy::Fail => {
+                        if *source_newer {
+                            "Approval will overwrite dest with newer source"
+                        } else {
+                            "⚠️  Approval will overwrite NEWER dest with older source"
+                        }
+                    }
+                    ConflictStrategy::Overwrite => "Will overwrite dest with source",
+                    ConflictStrategy::Newer => {
+                        if *source_newer {
+                            "Will update dest (source is newer)"
+                        } else {
+                            "Will keep dest (dest is newer)"
+                        }
+                    }
+                    ConflictStrategy::Skip => "Will skip (files differ)",
                 };
+
                 format!(
-                    "⚠️  Conflict detected ({}):\n  Source: {}\n  Dest:   {}\n  Strategy: {:?}",
-                    newer_indicator,
+                    "⚠️  File conflict:\n  Source: {}\n  Dest:   {}\n  → {}",
                     source.display(),
                     dest.display(),
-                    strategy
+                    action_desc
                 )
             }
             SyncAction::DirectoryConflict {
@@ -199,17 +212,30 @@ impl InteractivePrompter {
                 strategy,
                 source_newer,
             } => {
-                let newer_indicator = if *source_newer {
-                    "source newer"
-                } else {
-                    "dest newer"
+                let action_desc = match strategy {
+                    ConflictStrategy::Fail => {
+                        if *source_newer {
+                            "Approval will overwrite dest with newer source"
+                        } else {
+                            "⚠️  Approval will overwrite NEWER dest with older source"
+                        }
+                    }
+                    ConflictStrategy::Overwrite => "Will overwrite dest with source",
+                    ConflictStrategy::Newer => {
+                        if *source_newer {
+                            "Will update dest (source is newer)"
+                        } else {
+                            "Will keep dest (dest is newer)"
+                        }
+                    }
+                    ConflictStrategy::Skip => "Will skip (directories differ)",
                 };
+
                 format!(
-                    "⚠️  Directory conflict detected ({}):\n  Source: {}\n  Dest:   {}\n  Strategy: {:?}",
-                    newer_indicator,
+                    "⚠️  Directory conflict:\n  Source: {}\n  Dest:   {}\n  → {}",
                     source.display(),
                     dest.display(),
-                    strategy
+                    action_desc
                 )
             }
         }
