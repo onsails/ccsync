@@ -399,4 +399,47 @@ mod integration_tests {
             .unwrap();
         assert_eq!(content, "new content");
     }
+
+    #[test]
+    fn test_sync_skill_directory_conflict_with_interactive_approval() {
+        let (source_dir, dest_dir) = setup_test_dirs();
+
+        // Create different versions of the same skill
+        create_test_file(
+            source_dir.path(),
+            "skills/approved-skill/SKILL.md",
+            "new content",
+        );
+        create_test_file(
+            dest_dir.path(),
+            "skills/approved-skill/SKILL.md",
+            "old content",
+        );
+
+        // Use ConflictStrategy::Fail (default for interactive mode)
+        // but provide an approval callback that approves
+        let mut config = Config::default();
+        config.conflict_strategy = Some(crate::comparison::ConflictStrategy::Fail);
+
+        let engine = SyncEngine::new(config, SyncDirection::ToLocal).unwrap();
+
+        // Approval callback that approves everything
+        let approver = Box::new(|_action: &SyncAction| Ok(true));
+
+        let result = engine
+            .sync_with_approver(source_dir.path(), dest_dir.path(), Some(approver))
+            .unwrap();
+
+        // BUG: Currently this test fails because even though user approved,
+        // the executor sees ConflictStrategy::Fail and bails
+        // Expected: Should update the directory since user approved
+        assert_eq!(result.updated, 1, "User approved the conflict, should update");
+        assert_eq!(result.created, 0);
+        assert!(result.is_success());
+
+        // Verify dest has source content
+        let content = fs::read_to_string(dest_dir.path().join("skills/approved-skill/SKILL.md"))
+            .unwrap();
+        assert_eq!(content, "new content");
+    }
 }

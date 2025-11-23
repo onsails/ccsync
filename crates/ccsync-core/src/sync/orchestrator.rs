@@ -101,42 +101,7 @@ impl SyncEngine {
             let dest_path = dest_root.join(rel_path);
 
             // Determine action based on whether it's a file or directory
-            let action = if is_dir {
-                // Handle directory syncing
-                if dest_path.exists() {
-                    // Both exist - compare directories
-                    let dir_comparison =
-                        DirectoryComparator::compare(&file.path, &dest_path)?;
-
-                    if dir_comparison.is_identical() {
-                        SyncAction::Skip {
-                            path: file.path.clone(),
-                            reason: "identical content".to_string(),
-                        }
-                    } else {
-                        // Directories differ - check if source is newer
-                        let source_newer =
-                            DirectoryComparator::is_source_newer(&file.path, &dest_path)?;
-                        SyncAction::DirectoryConflict {
-                            source: file.path.clone(),
-                            dest: dest_path,
-                            strategy: conflict_strategy,
-                            source_newer,
-                        }
-                    }
-                } else {
-                    // Destination doesn't exist - create it
-                    SyncAction::CreateDirectory {
-                        source: file.path.clone(),
-                        dest: dest_path,
-                    }
-                }
-            } else {
-                // Handle file syncing (existing logic)
-                let comparison =
-                    FileComparator::compare(&file.path, &dest_path, conflict_strategy)?;
-                SyncActionResolver::resolve(file.path.clone(), dest_path, &comparison)
-            };
+            let action = Self::determine_sync_action(&file.path, &dest_path, is_dir, conflict_strategy)?;
 
             // Skip actions don't need approval (they're automatic decisions)
             if matches!(action, super::actions::SyncAction::Skip { .. }) {
@@ -148,31 +113,21 @@ impl SyncEngine {
             }
 
             // Check approval if callback provided (only for Create and Conflict actions)
-            if let Some(ref mut approve) = approver {
-                match approve(&action) {
-                    Ok(true) => {
-                        // Approved - continue to execution
-                    }
-                    Ok(false) => {
-                        // Skipped by user
-                        result.skipped += 1;
-                        *result
-                            .skip_reasons
-                            .entry("user skipped".to_string())
-                            .or_insert(0) += 1;
-                        continue;
-                    }
-                    Err(e) => {
-                        // User aborted or error in approval
-                        return Err(e);
+            match Self::apply_approval(&action, &mut approver, &mut result) {
+                Ok(Some(action_to_execute)) => {
+                    // Execute action
+                    if let Err(e) = executor.execute(&action_to_execute, &mut result) {
+                        eprintln!("Error: {e}");
+                        result.errors.push(e.to_string());
                     }
                 }
-            }
-
-            // Execute action
-            if let Err(e) = executor.execute(&action, &mut result) {
-                eprintln!("Error: {e}");
-                result.errors.push(e.to_string());
+                Ok(None) => {
+                    // User skipped - move to next file
+                }
+                Err(e) => {
+                    // User aborted or error in approval
+                    return Err(e);
+                }
             }
         }
 
@@ -198,6 +153,105 @@ impl SyncEngine {
         match self.config.conflict_strategy {
             Some(strategy) => strategy,
             None => ConflictStrategy::Fail,
+        }
+    }
+
+    /// Determine the sync action for a file or directory
+    fn determine_sync_action(
+        source_path: &Path,
+        dest_path: &Path,
+        is_dir: bool,
+        conflict_strategy: ConflictStrategy,
+    ) -> Result<SyncAction> {
+        if is_dir {
+            // Handle directory syncing
+            if dest_path.exists() {
+                // Both exist - compare directories
+                let dir_comparison = DirectoryComparator::compare(source_path, dest_path)?;
+
+                if dir_comparison.is_identical() {
+                    Ok(SyncAction::Skip {
+                        path: source_path.to_path_buf(),
+                        reason: "identical content".to_string(),
+                    })
+                } else {
+                    // Directories differ - check if source is newer
+                    let source_newer = DirectoryComparator::is_source_newer(source_path, dest_path)?;
+                    Ok(SyncAction::DirectoryConflict {
+                        source: source_path.to_path_buf(),
+                        dest: dest_path.to_path_buf(),
+                        strategy: conflict_strategy,
+                        source_newer,
+                    })
+                }
+            } else {
+                // Destination doesn't exist - create it
+                Ok(SyncAction::CreateDirectory {
+                    source: source_path.to_path_buf(),
+                    dest: dest_path.to_path_buf(),
+                })
+            }
+        } else {
+            // Handle file syncing
+            let comparison = FileComparator::compare(source_path, dest_path, conflict_strategy)?;
+            Ok(SyncActionResolver::resolve(
+                source_path.to_path_buf(),
+                dest_path.to_path_buf(),
+                &comparison,
+            ))
+        }
+    }
+
+    /// Apply approval logic to a sync action
+    /// Returns Ok(Some(action)) if approved, Ok(None) if user skipped, or Err if aborted
+    fn apply_approval(
+        action: &SyncAction,
+        approver: &mut Option<ApprovalCallback>,
+        result: &mut SyncResult,
+    ) -> Result<Option<SyncAction>> {
+        if let Some(approve) = approver {
+            match approve(action) {
+                Ok(true) => {
+                    // Approved - if this is a Fail conflict, treat as Overwrite
+                    Ok(Some(match action {
+                        SyncAction::Conflict {
+                            source,
+                            dest,
+                            strategy: ConflictStrategy::Fail,
+                            source_newer,
+                        } => SyncAction::Conflict {
+                            source: source.clone(),
+                            dest: dest.clone(),
+                            strategy: ConflictStrategy::Overwrite,
+                            source_newer: *source_newer,
+                        },
+                        SyncAction::DirectoryConflict {
+                            source,
+                            dest,
+                            strategy: ConflictStrategy::Fail,
+                            source_newer,
+                        } => SyncAction::DirectoryConflict {
+                            source: source.clone(),
+                            dest: dest.clone(),
+                            strategy: ConflictStrategy::Overwrite,
+                            source_newer: *source_newer,
+                        },
+                        _ => action.clone(),
+                    }))
+                }
+                Ok(false) => {
+                    // Skipped by user
+                    result.skipped += 1;
+                    *result
+                        .skip_reasons
+                        .entry("user skipped".to_string())
+                        .or_insert(0) += 1;
+                    Ok(None)
+                }
+                Err(e) => Err(e),
+            }
+        } else {
+            Ok(Some(action.clone()))
         }
     }
 }
