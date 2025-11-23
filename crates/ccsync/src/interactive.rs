@@ -18,6 +18,8 @@ pub enum UserChoice {
     None,
     /// Show diff and re-prompt
     Diff,
+    /// Show content diff (for directories) and re-prompt
+    ContentDiff,
     /// Quit immediately
     Quit,
 }
@@ -72,7 +74,7 @@ impl InteractivePrompter {
 
         // Prompt with options
         loop {
-            let choice = Self::show_prompt()?;
+            let choice = Self::show_prompt(action)?;
 
             match choice {
                 UserChoice::Yes => return Ok(true),
@@ -89,6 +91,10 @@ impl InteractivePrompter {
                     Self::show_diff(action);
                     // Loop back to re-prompt
                 }
+                UserChoice::ContentDiff => {
+                    Self::show_content_diff(action);
+                    // Loop back to re-prompt
+                }
                 UserChoice::Quit => {
                     bail!("User aborted sync operation");
                 }
@@ -97,10 +103,19 @@ impl InteractivePrompter {
     }
 
     /// Show the selection prompt
-    fn show_prompt() -> Result<UserChoice> {
+    fn show_prompt(action: &SyncAction) -> Result<UserChoice> {
         let term = Term::stderr();
 
-        print!("Proceed? [y/n/a/s/d/q] (yes/no/all/skip-all/diff/quit): ");
+        // Check if this is a directory conflict (after showing 'd' diff)
+        let has_content_diff = matches!(action, SyncAction::DirectoryConflict { .. });
+
+        let prompt_text = if has_content_diff {
+            "Proceed? [y/n/a/s/d/c/q] (yes/no/all/skip-all/diff/content-diff/quit): "
+        } else {
+            "Proceed? [y/n/a/s/d/q] (yes/no/all/skip-all/diff/quit): "
+        };
+
+        print!("{prompt_text}");
         std::io::Write::flush(&mut std::io::stdout()).context("Failed to flush stdout")?;
 
         loop {
@@ -117,6 +132,7 @@ impl InteractivePrompter {
                 'a' | 'A' => return Ok(UserChoice::All),
                 's' | 'S' => return Ok(UserChoice::None),
                 'd' | 'D' => return Ok(UserChoice::Diff),
+                'c' | 'C' if has_content_diff => return Ok(UserChoice::ContentDiff),
                 'q' | 'Q' => return Ok(UserChoice::Quit),
                 '\n' | '\r' => {
                     // Enter key - default to no
@@ -124,8 +140,13 @@ impl InteractivePrompter {
                     return Ok(UserChoice::No);
                 }
                 _ => {
-                    println!("Invalid key. Press y/n/a/s/d/q");
-                    print!("Proceed? [y/n/a/s/d/q]: ");
+                    let valid_keys = if has_content_diff {
+                        "y/n/a/s/d/c/q"
+                    } else {
+                        "y/n/a/s/d/q"
+                    };
+                    println!("Invalid key. Press {valid_keys}");
+                    print!("{prompt_text}");
                     std::io::Write::flush(&mut std::io::stdout())
                         .context("Failed to flush stdout")?;
                 }
@@ -299,6 +320,54 @@ impl InteractivePrompter {
                         println!("--- {}", source.display());
                     }
                 }
+            }
+        }
+    }
+
+    /// Show content diffs for modified files in a directory conflict
+    fn show_content_diff(action: &SyncAction) {
+        match action {
+            SyncAction::DirectoryConflict { source, dest, .. } => {
+                // Compare directories to get list of modified files
+                match DirectoryComparator::compare(source, dest) {
+                    Ok(comparison) => {
+                        if comparison.modified.is_empty() {
+                            println!("\n📝 No modified files to show diff for.");
+                            println!("   (Only additions/removals in this directory)");
+                            return;
+                        }
+
+                        println!("\n📝 Content diffs for {} modified file(s):\n", comparison.modified.len());
+
+                        for (idx, rel_path) in comparison.modified.iter().enumerate() {
+                            let src_file = source.join(rel_path);
+                            let dst_file = dest.join(rel_path);
+
+                            println!("━━━ File {}/{}: {} ━━━", idx + 1, comparison.modified.len(), rel_path.display());
+
+                            match FileComparator::generate_diff(&src_file, &dst_file) {
+                                Ok(diff) => {
+                                    println!("{diff}");
+                                }
+                                Err(e) => {
+                                    eprintln!("Warning: Failed to generate diff: {e}");
+                                    eprintln!("  Source: {}", src_file.display());
+                                    eprintln!("  Dest:   {}", dst_file.display());
+                                }
+                            }
+
+                            if idx < comparison.modified.len() - 1 {
+                                println!(); // Blank line between files
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("\nWarning: Failed to compare directories: {e}");
+                    }
+                }
+            }
+            _ => {
+                println!("\nContent diff is only available for directory conflicts.");
             }
         }
     }

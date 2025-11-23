@@ -193,10 +193,10 @@ impl DiffGenerator {
         if comparison.is_identical() {
             writeln!(output, "\x1b[32mDirectories are identical\x1b[0m")
                 .expect("Writing to String should never fail");
-        } else {
+        } else if !comparison.modified.is_empty() {
             writeln!(
                 output,
-                "\x1b[2mPress 'c' to see content diff, or any other key to return...\x1b[0m"
+                "\x1b[2m(Press 'c' at the prompt to see line-by-line content diffs for modified files)\x1b[0m"
             )
             .expect("Writing to String should never fail");
         }
