@@ -21,8 +21,11 @@ pub fn scan(base: &Path) -> Result<Vec<PathBuf>> {
         let entry = entry?;
         let path = entry.path();
 
-        // Only include files (not directories)
-        if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
+        // Include both regular files and symlinks (symlinks are resolved later by the scanner)
+        let metadata = entry.metadata()?;
+        if (metadata.is_file() || metadata.is_symlink())
+            && path.extension().is_some_and(|ext| ext == "md")
+        {
             files.push(path);
         }
     }

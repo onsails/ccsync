@@ -23,7 +23,11 @@ pub fn scan(base: &Path) -> Result<Vec<PathBuf>> {
         let entry = entry?; // Propagate errors instead of silently ignoring
         let path = entry.path();
 
-        if entry.file_type().is_file() && path.extension().is_some_and(|ext| ext == "md") {
+        // Accept both regular files and symlinks (symlinks are resolved later by the scanner)
+        let file_type = entry.file_type();
+        if (file_type.is_file() || file_type.is_symlink())
+            && path.extension().is_some_and(|ext| ext == "md")
+        {
             files.push(path.to_path_buf());
         }
     }
