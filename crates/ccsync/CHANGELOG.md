@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8](https://github.com/onsails/ccsync/compare/ccsync-v0.1.7...ccsync-v0.1.8) - 2025-11-24
+
+### Other
+
+- update Cargo.toml dependencies
+
 ## [0.1.7](https://github.com/onsails/ccsync/compare/ccsync-v0.1.6...ccsync-v0.1.7) - 2025-11-24
 
 ### Added
