@@ -1,8 +1,8 @@
 ## Rust Project Standards
 
 ### 1. Dependency Versioning
-- Always use tilde requirements: `~x.x.x` (ensures patch compatibility)
-- Example: `serde = "~1.0.0"` not `serde = "1.0"`
+- Always use requirements: `x.x` (ensures patch compatibility)
+- Example: `serde = "1.0"`
 
 ### 2. Error Handling - FAIL FAST Principle
 
@@ -65,9 +65,40 @@ match operation() {
 - Structure: `project/`, `project-cli/`, `project-client/`, etc.
 
 ### 5. Testing
+
+#### 5.1 Unit Tests
 - **NEVER** use `std::env::set_var()` in tests (pollutes environment)
 - **ALWAYS** pass config through function parameters
 - Tests in same file using `#[cfg(test)]` module
+
+#### 5.2 Integration Tests - MANDATORY for Coordinated Systems
+
+**CRITICAL: Unit tests alone give false confidence for multi-component systems**
+
+**The Gap:**
+- Unit tests verify components "CAN" work (capabilities tested in isolation)
+- Integration tests verify components "DOES" coordinate (actual runtime behavior)
+- Passing all unit tests ≠ working system
+
+**Integration tests are REQUIRED when:**
+- Components communicate via channels (mpsc, watch, broadcast)
+- Shared state between components (Arc<RwLock<>>, Arc<Mutex<>>)
+- Event-driven coordination (async tasks, spawned workers)
+- Trait implementations that interact across boundaries
+- Factory patterns that wire multiple components together
+
+**Critical Design Rule:**
+- **NEVER manually trigger coordination mechanisms in integration tests**
+- Use timeouts to catch missing notifications/updates (fail fast on missing coordination)
+- Test the full end-to-end path, not just individual capabilities
+- If two components share a channel/lock/watch, you MUST have an integration test proving they actually coordinate
+
+**What to verify:**
+- Component A action → Component B receives expected effect
+- Shared state updates propagate correctly
+- Event ordering guarantees hold
+- Shutdown cleans up all resources
+- No race conditions under concurrent access
 
 ### 6. Configuration Management
 - **CLI-First**: Never bypass CLI argument parsing
@@ -88,3 +119,4 @@ match operation() {
 
 ### 9. Rust Versioning
 - **Cargo edition**: Use 2024 edition
+
