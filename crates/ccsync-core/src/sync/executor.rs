@@ -130,6 +130,32 @@ impl FileOperationExecutor {
                 .with_context(|| format!("Failed to create directory: {}", parent.display()))?;
         }
 
+        // If destination exists and is read-only, make it writable first
+        if dest.exists() {
+            let metadata = fs::metadata(dest)
+                .with_context(|| format!("Failed to read metadata: {}", dest.display()))?;
+            let perms = metadata.permissions();
+
+            if perms.readonly() {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    // On Unix, add write permission for owner only
+                    let mode = perms.mode();
+                    let new_perms = fs::Permissions::from_mode(mode | 0o200); // Add owner write
+                    fs::set_permissions(dest, new_perms)
+                        .with_context(|| format!("Failed to make file writable: {}", dest.display()))?;
+                }
+                #[cfg(not(unix))]
+                {
+                    let mut new_perms = perms.clone();
+                    new_perms.set_readonly(false);
+                    fs::set_permissions(dest, new_perms)
+                        .with_context(|| format!("Failed to make file writable: {}", dest.display()))?;
+                }
+            }
+        }
+
         // Copy file
         fs::copy(source, dest).with_context(|| {
             format!("Failed to copy {} to {}", source.display(), dest.display())
@@ -295,5 +321,29 @@ mod tests {
 
         assert!(dst.exists());
         assert!(dst.is_dir());
+    }
+
+    #[test]
+    fn test_copy_file_overwrites_readonly_destination() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let tmp = TempDir::new().unwrap();
+        let src = tmp.path().join("source.txt");
+        let dst = tmp.path().join("dest.txt");
+
+        // Create source file with new content
+        fs::write(&src, "new content").unwrap();
+
+        // Create destination file with old content and make it read-only
+        fs::write(&dst, "old content").unwrap();
+        let mut perms = fs::metadata(&dst).unwrap().permissions();
+        perms.set_mode(0o444); // read-only for all
+        fs::set_permissions(&dst, perms).unwrap();
+
+        // This should succeed even though destination is read-only
+        FileOperationExecutor::copy_file(&src, &dst).unwrap();
+
+        // Verify the file was overwritten with new content
+        assert_eq!(fs::read_to_string(&dst).unwrap(), "new content");
     }
 }
