@@ -17,7 +17,7 @@ cargo install ccsync
 ### Using curl (Linux/macOS)
 
 ```bash
-curl https://i.jpillora.com/onsails/ccsync@ccsync-v0.1.6! | bash
+curl https://i.jpillora.com/onsails/ccsync@ccsync-v0.1.8! | bash
 ```
 
 ### Using Nix/NixOS
